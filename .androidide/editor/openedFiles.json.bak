@@ -1,0 +1,20 @@
+{
+  "allFiles": [
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/USB Serial/settings.gradle",
+      "selection": {
+        "end": {
+          "column": 3,
+          "index": 96,
+          "line": 5
+        },
+        "start": {
+          "column": 3,
+          "index": 96,
+          "line": 5
+        }
+      }
+    }
+  ],
+  "selectedFile": "/storage/emulated/0/AndroidIDEProjects/USB Serial/settings.gradle"
+}
