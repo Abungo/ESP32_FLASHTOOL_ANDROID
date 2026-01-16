@@ -242,23 +242,16 @@ public class FlashFirmware extends AppCompatActivity {
     }
   }
 
-  private byte[] readFile(InputStream inputStream) {
-    ByteArrayOutputStream byteArrayOutputStream = null;
-
-    int i;
-    try {
-      byteArrayOutputStream = new ByteArrayOutputStream();
-      i = inputStream.read();
-      while (i != -1) {
-        byteArrayOutputStream.write(i);
-        i = inputStream.read();
+  private byte[] readFile(InputStream inputStream) throws IOException {
+    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        InputStream is = inputStream) {
+      byte[] buffer = new byte[1024];
+      int len;
+      while ((len = is.read(buffer)) != -1) {
+        byteArrayOutputStream.write(buffer, 0, len);
       }
-      inputStream.close();
-    } catch (IOException e) {
-      e.printStackTrace();
+      return byteArrayOutputStream.toByteArray();
     }
-
-    return byteArrayOutputStream.toByteArray();
   }
 
   private class UploadESP32Asyc extends AsyncTask<Void, Void, Void> // UI thread
@@ -347,17 +340,22 @@ public class FlashFirmware extends AppCompatActivity {
       cmd.init();
 
       // Those are the files you want to flush
-      dialogAppend("Flashing file 1 0x1000");
-      cmd.flashData(readFile(file1), 0x1000, 0);
-      /*
-      dialogAppend("Flashing file 2 0x1000");
-      cmd.flashData(readFile(file2), 0x1000, 0);
+      try {
+        dialogAppend("Flashing file 1 0x1000");
+        cmd.flashData(readFile(file1), 0x1000, 0);
+        /*
+        dialogAppend("Flashing file 2 0x1000");
+        cmd.flashData(readFile(file2), 0x1000, 0);
 
-      dialogAppend("Flashing file 3 0x10000");
-      cmd.flashData(readFile(file3), 0x10000, 0);
-      dialogAppend("Flashing file 4 0x8000");
-      cmd.flashData(readFile(file4), 0x8000, 0);
-      */
+        dialogAppend("Flashing file 3 0x10000");
+        cmd.flashData(readFile(file3), 0x10000, 0);
+        dialogAppend("Flashing file 4 0x8000");
+        cmd.flashData(readFile(file4), 0x8000, 0);
+        */
+      } catch (IOException e) {
+        e.printStackTrace();
+        tvAppend(tvRead, "Error reading file: " + e.getMessage() + "\n");
+      }
       // we have finish flashing lets reset the board so that the program can start
       cmd.reset();
 
