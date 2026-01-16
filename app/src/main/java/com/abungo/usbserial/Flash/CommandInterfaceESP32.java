@@ -175,6 +175,13 @@ public class CommandInterfaceESP32 {
             retval = mPhysicaloid.read(buf,1);
             if(retval > 0) {
 
+            } else {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    // Restore interrupt status
+                    Thread.currentThread().interrupt();
+                }
             }
             endTime = System.currentTimeMillis();
             if((endTime - startTime) > 1000) {break;}
