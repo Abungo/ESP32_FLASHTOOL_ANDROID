@@ -243,15 +243,13 @@ public class FlashFirmware extends AppCompatActivity {
   }
 
   private byte[] readFile(InputStream inputStream) {
-    ByteArrayOutputStream byteArrayOutputStream = null;
-
-    int i;
+    // Optimization: Use a 4KB buffer to reduce I/O overhead compared to byte-by-byte reading.
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    byte[] buffer = new byte[4096];
+    int length;
     try {
-      byteArrayOutputStream = new ByteArrayOutputStream();
-      i = inputStream.read();
-      while (i != -1) {
-        byteArrayOutputStream.write(i);
-        i = inputStream.read();
+      while ((length = inputStream.read(buffer)) != -1) {
+        byteArrayOutputStream.write(buffer, 0, length);
       }
       inputStream.close();
     } catch (IOException e) {
