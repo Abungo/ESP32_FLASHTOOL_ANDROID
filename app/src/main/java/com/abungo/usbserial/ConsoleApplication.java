@@ -148,11 +148,16 @@ public class ConsoleApplication extends Application {
         //get the results
         //wait for the result to come back
         try {
-            /*while (getInputStream().available() <= 0 || diffTime < timeOut) {
-                diffTime = System.currentTimeMillis() - startTime;}*/
-            while (getInputStream().available() <= 0) ;
+            while (getInputStream().available() <= 0 && (System.currentTimeMillis() - startTime) < timeOut) {
+                try {
+                    Thread.sleep(10); // Sleep for 10ms to avoid busy-waiting
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         } catch (IOException e) {
-
+            Log.e("ConsoleApplication", "Error checking for available data", e);
         }
 
         myMessage = "Replacement Message";
