@@ -335,25 +335,25 @@ public class CommandInterfaceESP32 {
     }*/
     /*
      * This will do a SLIP encode
+     * Optimized to use ByteArrayOutputStream to avoid O(N^2) complexity from repeated array copying.
      */
     public byte[] slipEncode(byte buffer[]) {
-        byte encoded[] = new byte[] {(byte) (0xC0)};
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream(buffer.length + 16);
+        encoded.write(0xC0);
 
-        for (int x = 0; x < buffer.length; x++) {
-            if (buffer[x] == (byte) (0xC0)) {
-                encoded = _appendArray(encoded, new byte[] {(byte) (0xDB)});
-                encoded = _appendArray(encoded, new byte[] {(byte) (0xDC)});
-
-            } else if (buffer[x] == (byte) (0xDB)) {
-                encoded = _appendArray(encoded, new byte[] {(byte) (0xDB)});
-                encoded = _appendArray(encoded, new byte[] {(byte) (0xDD)});
+        for (byte b : buffer) {
+            if (b == (byte) 0xC0) {
+                encoded.write(0xDB);
+                encoded.write(0xDC);
+            } else if (b == (byte) 0xDB) {
+                encoded.write(0xDB);
+                encoded.write(0xDD);
             } else {
-                encoded = _appendArray(encoded,new byte[] {buffer[x]});
+                encoded.write(b);
             }
         }
-        encoded = _appendArray(encoded,new byte[] {(byte) (0xC0)});
-
-        return encoded;
+        encoded.write(0xC0);
+        return encoded.toByteArray();
     }
 
     /*
@@ -555,17 +555,13 @@ public class CommandInterfaceESP32 {
 
     /*
      * This takes 2 arrays as params and return a concatenate array
+     * Optimized to use System.arraycopy for better performance.
      */
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
 
         byte c[] = new byte[arr1.length + arr2.length];
-
-        for (int i = 0; i < arr1.length; i++) {
-            c[i] = arr1[i];
-        }
-        for (int j = 0; j < arr2.length; j++) {
-            c[arr1.length + j] = arr2[j];
-        }
+        System.arraycopy(arr1, 0, c, 0, arr1.length);
+        System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
         return c;
     }
 
