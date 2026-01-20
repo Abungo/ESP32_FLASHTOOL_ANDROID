@@ -337,23 +337,25 @@ public class CommandInterfaceESP32 {
      * This will do a SLIP encode
      */
     public byte[] slipEncode(byte buffer[]) {
-        byte encoded[] = new byte[] {(byte) (0xC0)};
+        // Optimized: Use ByteArrayOutputStream to avoid O(N^2) array copying
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream(buffer.length + 20);
+        encoded.write(0xC0);
 
         for (int x = 0; x < buffer.length; x++) {
             if (buffer[x] == (byte) (0xC0)) {
-                encoded = _appendArray(encoded, new byte[] {(byte) (0xDB)});
-                encoded = _appendArray(encoded, new byte[] {(byte) (0xDC)});
+                encoded.write(0xDB);
+                encoded.write(0xDC);
 
             } else if (buffer[x] == (byte) (0xDB)) {
-                encoded = _appendArray(encoded, new byte[] {(byte) (0xDB)});
-                encoded = _appendArray(encoded, new byte[] {(byte) (0xDD)});
+                encoded.write(0xDB);
+                encoded.write(0xDD);
             } else {
-                encoded = _appendArray(encoded,new byte[] {buffer[x]});
+                encoded.write(buffer[x]);
             }
         }
-        encoded = _appendArray(encoded,new byte[] {(byte) (0xC0)});
+        encoded.write(0xC0);
 
-        return encoded;
+        return encoded.toByteArray();
     }
 
     /*
