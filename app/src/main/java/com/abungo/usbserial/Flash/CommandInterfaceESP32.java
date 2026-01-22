@@ -398,10 +398,18 @@ public class CommandInterfaceESP32 {
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
 
-        byte pkt[] = _appendArray(_int_to_bytearray(data.length),_int_to_bytearray(seq));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt, data);
+        // Optimized to avoid multiple allocations and copies
+        byte pkt[] = new byte[16 + data.length];
+
+        byte[] b_size = _int_to_bytearray(data.length);
+        byte[] b_seq = _int_to_bytearray(seq);
+        byte[] b_zero = _int_to_bytearray(0);
+
+        System.arraycopy(b_size, 0, pkt, 0, 4);
+        System.arraycopy(b_seq, 0, pkt, 4, 4);
+        System.arraycopy(b_zero, 0, pkt, 8, 4);
+        System.arraycopy(b_zero, 0, pkt, 12, 4);
+        System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
 
@@ -561,12 +569,8 @@ public class CommandInterfaceESP32 {
 
         byte c[] = new byte[arr1.length + arr2.length];
 
-        for (int i = 0; i < arr1.length; i++) {
-            c[i] = arr1[i];
-        }
-        for (int j = 0; j < arr2.length; j++) {
-            c[arr1.length + j] = arr2[j];
-        }
+        System.arraycopy(arr1, 0, c, 0, arr1.length);
+        System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
         return c;
     }
 
@@ -577,9 +581,7 @@ public class CommandInterfaceESP32 {
 
         byte c[] = new byte[length];
 
-        for (int i = 0; i < (length); i++) {
-            c[i] = arr1[i + pos];
-        }
+        System.arraycopy(arr1, pos, c, 0, length);
         return c;
     }
 
