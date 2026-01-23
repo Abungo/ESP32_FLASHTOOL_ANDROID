@@ -398,10 +398,13 @@ public class CommandInterfaceESP32 {
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
 
-        byte pkt[] = _appendArray(_int_to_bytearray(data.length),_int_to_bytearray(seq));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt, data);
+        // Optimized to avoid multiple allocations and array copies
+        byte pkt[] = new byte[16 + data.length];
+        putInt(pkt, 0, data.length);
+        putInt(pkt, 4, seq);
+        putInt(pkt, 8, 0);
+        putInt(pkt, 12, 0);
+        System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
 
@@ -561,12 +564,8 @@ public class CommandInterfaceESP32 {
 
         byte c[] = new byte[arr1.length + arr2.length];
 
-        for (int i = 0; i < arr1.length; i++) {
-            c[i] = arr1[i];
-        }
-        for (int j = 0; j < arr2.length; j++) {
-            c[arr1.length + j] = arr2[j];
-        }
+        System.arraycopy(arr1, 0, c, 0, arr1.length);
+        System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
         return c;
     }
 
@@ -577,9 +576,7 @@ public class CommandInterfaceESP32 {
 
         byte c[] = new byte[length];
 
-        for (int i = 0; i < (length); i++) {
-            c[i] = arr1[i + pos];
-        }
+        System.arraycopy(arr1, pos, c, 0, length);
         return c;
     }
 
@@ -655,6 +652,13 @@ public class CommandInterfaceESP32 {
         byte ret[] = { (byte) (i & 0xff), (byte) ((i >> 8) & 0xff), (byte) ((i >> 16) & 0xff),
                 (byte) ((i >> 24) & 0xff) };
         return ret;
+    }
+
+    private void putInt(byte[] buffer, int offset, int val) {
+        buffer[offset] = (byte) (val & 0xff);
+        buffer[offset + 1] = (byte) ((val >> 8) & 0xff);
+        buffer[offset + 2] = (byte) ((val >> 16) & 0xff);
+        buffer[offset + 3] = (byte) ((val >> 24) & 0xff);
     }
 
     private int _bytearray_to_int(byte i, byte j, byte k, byte l) {
