@@ -397,14 +397,27 @@ public class CommandInterfaceESP32 {
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
+        int len = data.length;
+        byte[] pkt = new byte[16 + len];
 
-        byte pkt[] = _appendArray(_int_to_bytearray(data.length),_int_to_bytearray(seq));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt, data);
+        // Write length
+        pkt[0] = (byte) (len & 0xff);
+        pkt[1] = (byte) ((len >> 8) & 0xff);
+        pkt[2] = (byte) ((len >> 16) & 0xff);
+        pkt[3] = (byte) ((len >> 24) & 0xff);
+
+        // Write seq
+        pkt[4] = (byte) (seq & 0xff);
+        pkt[5] = (byte) ((seq >> 8) & 0xff);
+        pkt[6] = (byte) ((seq >> 16) & 0xff);
+        pkt[7] = (byte) ((seq >> 24) & 0xff);
+
+        // Write 0 (indices 8-11) and 0 (indices 12-15) are already 0 by default
+
+        // Write data
+        System.arraycopy(data, 0, pkt, 16, len);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
-
     }
 
     public void init() {
@@ -560,13 +573,8 @@ public class CommandInterfaceESP32 {
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
 
         byte c[] = new byte[arr1.length + arr2.length];
-
-        for (int i = 0; i < arr1.length; i++) {
-            c[i] = arr1[i];
-        }
-        for (int j = 0; j < arr2.length; j++) {
-            c[arr1.length + j] = arr2[j];
-        }
+        System.arraycopy(arr1, 0, c, 0, arr1.length);
+        System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
         return c;
     }
 
@@ -576,10 +584,7 @@ public class CommandInterfaceESP32 {
     private byte[] _subArray(byte arr1[], int pos, int length) {
 
         byte c[] = new byte[length];
-
-        for (int i = 0; i < (length); i++) {
-            c[i] = arr1[i + pos];
-        }
+        System.arraycopy(arr1, pos, c, 0, length);
         return c;
     }
 
