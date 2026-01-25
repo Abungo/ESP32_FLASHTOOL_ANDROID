@@ -397,14 +397,28 @@ public class CommandInterfaceESP32 {
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
+        // Optimization: Allocate packet buffer once and fill directly to avoid 4 allocations and copies per block.
+        // Packet structure: [4 bytes size][4 bytes seq][4 bytes 0][4 bytes 0][data]
+        byte[] pkt = new byte[16 + data.length];
 
-        byte pkt[] = _appendArray(_int_to_bytearray(data.length),_int_to_bytearray(seq));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt, data);
+        // Size
+        pkt[0] = (byte) (data.length & 0xff);
+        pkt[1] = (byte) ((data.length >> 8) & 0xff);
+        pkt[2] = (byte) ((data.length >> 16) & 0xff);
+        pkt[3] = (byte) ((data.length >> 24) & 0xff);
+
+        // Sequence
+        pkt[4] = (byte) (seq & 0xff);
+        pkt[5] = (byte) ((seq >> 8) & 0xff);
+        pkt[6] = (byte) ((seq >> 16) & 0xff);
+        pkt[7] = (byte) ((seq >> 24) & 0xff);
+
+        // Bytes 8-15 are 0 by default in a new Java array.
+
+        // Data
+        System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
-
     }
 
     public void init() {
@@ -558,15 +572,9 @@ public class CommandInterfaceESP32 {
      * This takes 2 arrays as params and return a concatenate array
      */
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
-
         byte c[] = new byte[arr1.length + arr2.length];
-
-        for (int i = 0; i < arr1.length; i++) {
-            c[i] = arr1[i];
-        }
-        for (int j = 0; j < arr2.length; j++) {
-            c[arr1.length + j] = arr2[j];
-        }
+        System.arraycopy(arr1, 0, c, 0, arr1.length);
+        System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
         return c;
     }
 
@@ -574,12 +582,8 @@ public class CommandInterfaceESP32 {
      * get part of an array
      */
     private byte[] _subArray(byte arr1[], int pos, int length) {
-
         byte c[] = new byte[length];
-
-        for (int i = 0; i < (length); i++) {
-            c[i] = arr1[i + pos];
-        }
+        System.arraycopy(arr1, pos, c, 0, length);
         return c;
     }
 
