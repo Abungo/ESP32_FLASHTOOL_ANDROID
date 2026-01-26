@@ -397,14 +397,16 @@ public class CommandInterfaceESP32 {
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
-
-        byte pkt[] = _appendArray(_int_to_bytearray(data.length),_int_to_bytearray(seq));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt, data);
+        // Optimization: Pre-allocate the exact size needed (16 bytes header + data)
+        // and fill it directly to avoid multiple array allocations and copies.
+        byte[] pkt = new byte[16 + data.length];
+        putInt(pkt, 0, data.length);
+        putInt(pkt, 4, seq);
+        putInt(pkt, 8, 0);
+        putInt(pkt, 12, 0);
+        System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
-
     }
 
     public void init() {
@@ -558,15 +560,9 @@ public class CommandInterfaceESP32 {
      * This takes 2 arrays as params and return a concatenate array
      */
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
-
         byte c[] = new byte[arr1.length + arr2.length];
-
-        for (int i = 0; i < arr1.length; i++) {
-            c[i] = arr1[i];
-        }
-        for (int j = 0; j < arr2.length; j++) {
-            c[arr1.length + j] = arr2[j];
-        }
+        System.arraycopy(arr1, 0, c, 0, arr1.length);
+        System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
         return c;
     }
 
@@ -574,13 +570,16 @@ public class CommandInterfaceESP32 {
      * get part of an array
      */
     private byte[] _subArray(byte arr1[], int pos, int length) {
-
         byte c[] = new byte[length];
-
-        for (int i = 0; i < (length); i++) {
-            c[i] = arr1[i + pos];
-        }
+        System.arraycopy(arr1, pos, c, 0, length);
         return c;
+    }
+
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset+1] = (byte) ((i >> 8) & 0xff);
+        buf[offset+2] = (byte) ((i >> 16) & 0xff);
+        buf[offset+3] = (byte) ((i >> 24) & 0xff);
     }
 
     /*
