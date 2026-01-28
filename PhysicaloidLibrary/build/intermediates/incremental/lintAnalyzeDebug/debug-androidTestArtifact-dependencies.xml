@@ -1,0 +1,20 @@
+<dependencies>
+  <compile
+      roots="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar:unspecified@jar,/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID@@:PhysicaloidLibrary::debug">
+    <dependency
+        name="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar:unspecified@jar"
+        simpleName="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar"/>
+    <dependency
+        name="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID@@:PhysicaloidLibrary::debug"
+        simpleName="USB Serial:PhysicaloidLibrary"/>
+  </compile>
+  <package
+      roots="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID@@:PhysicaloidLibrary::debug,__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar:unspecified@jar">
+    <dependency
+        name="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID@@:PhysicaloidLibrary::debug"
+        simpleName="USB Serial:PhysicaloidLibrary"/>
+    <dependency
+        name="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar:unspecified@jar"
+        simpleName="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar"/>
+  </package>
+</dependencies>

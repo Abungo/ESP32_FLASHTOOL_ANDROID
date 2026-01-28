@@ -1,0 +1,75 @@
+/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:8: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+        android:targetSdkVersion="12" />
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build.gradle:11: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+        targetSdk 33
+        ~~~~~~~~~~~~
+
+   Explanation for issues of type "OldTargetApi":
+   When your application runs on a version of Android that is more recent than
+   your targetSdkVersion specifies that it has been tested with, various
+   compatibility modes kick in. This ensures that your application continues
+   to work, but it may look out of place. For example, if the targetSdkVersion
+   is less than 14, your app may get an option button in the UI.
+
+   To fix this issue, set the targetSdkVersion to the highest available value.
+   Then test your app to make sure everything works correctly. You may want to
+   consult the compatibility notes to see what changes apply to each version
+   you are adding support for:
+   https://developer.android.com/reference/android/os/Build.VERSION_CODES.html
+   as well as follow this guide:
+   https://developer.android.com/distribute/best-practices/develop/target-sdk.
+   html
+
+   https://developer.android.com/distribute/best-practices/develop/target-sdk.html
+
+/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/src/com/physicaloid/lib/programmer/avr/Stk500.java:530: Error: Suspicious indentation: This is indented but is not nested under the previous expression (while(bRetry) {     ...) [SuspiciousIndentation]
+          return program_enable();
+          ~~~~~~~~~~~~~~~~~~~~~~~~
+    /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/src/com/physicaloid/lib/programmer/avr/Stk500.java:418: Previous statement here
+/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/src/com/physicaloid/lib/programmer/avr/Stk500V2.java:619: Error: Suspicious indentation: This is indented but is not nested under the previous expression (while (bRetry) {    ...) [SuspiciousIndentation]
+            return 0;
+            ~~~~~~~~~
+    /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/src/com/physicaloid/lib/programmer/avr/Stk500V2.java:541: Previous statement here
+
+   Explanation for issues of type "SuspiciousIndentation":
+   This check looks for cases where the indentation suggests a grouping that
+   isn't actually there in the code. A common example of this would be
+   something like
+   if (column > width)
+       line++
+       column = 0
+   Here, the column = 0 line will be executed every single time, not just if
+   the condition is true.
+
+   Available options:
+
+   **always-run** (default is false):
+   Whether this check should be included while editing.
+
+   While you're editing, it's common to have a temporary situation where you have suspicious indentation scenarios -- e.g. you start typing an `if` statement on the line above something you want to make conditional, and you haven't indented it yet. It can be distracting and misleading to suddenly have both statements light up as errors. Therefore, lint will avoid including this check when running on the fly in the editor, unless it looks like the file has not been recently edited. With this option, you can turn it on in all cases.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="SuspiciousIndentation">
+           <option name="always-run" value="false" />
+       </issue>
+   </lint>
+   ```
+
+/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:7: Warning: This minSdkVersion value (12) is not used; it is always overridden by the value specified in the Gradle build script (14) [GradleOverrides]
+        android:minSdkVersion="12"
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:8: Warning: This targetSdkVersion value (12) is not used; it is always overridden by the value specified in the Gradle build script (33) [GradleOverrides]
+        android:targetSdkVersion="12" />
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "GradleOverrides":
+   The value of (for example) minSdkVersion is only used if it is not
+   specified in the build.gradle build scripts. When specified in the Gradle
+   build scripts, the manifest value is ignored and can be misleading, so
+   should be removed to avoid ambiguity.
+
+2 errors, 4 warnings

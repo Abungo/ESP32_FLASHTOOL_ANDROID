@@ -1,5 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">USB Serial</string>
-
+    <!-- App Info -->
+    <string name="app_name">ESP32 Flash Tool</string>
+    <string name="app_description">Flash firmware to your ESP32 devices via USB</string>
+    
+    <!-- Main Screen -->
+    <string name="select_firmware">Select Firmware</string>
+    <string name="baud_rate">Baud Rate</string>
+    <string name="flash_firmware">Flash Firmware</string>
+    <string name="detect_device">Detect Device</string>
+    <string name="firmware_info">Firmware Info</string>
+    <string name="device_status">Device Status</string>
+    <string name="connection_log">Connection Log</string>
+    <string name="ready">Ready to flash</string>
+    
+    <!-- Device Status -->
+    <string name="device_connected">Device Connected</string>
+    <string name="device_disconnected">No Device</string>
+    <string name="detecting">Detecting…</string>
+    <string name="flashing">Flashing…</string>
+    <string name="chip_detected">Chip: %1$s</string>
+    
+    <!-- Actions -->
+    <string name="clear_log">Clear Log</string>
+    <string name="about">About</string>
+    <string name="help">Help</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    
+    <!-- Messages -->
+    <string name="flash_success">Firmware flashed successfully!</string>
+    <string name="flash_failed">Flash failed. Please try again.</string>
+    <string name="no_device">No USB device connected</string>
+    <string name="device_opened">Device opened successfully</string>
+    <string name="device_open_failed">Failed to open device. Check USB connection and permissions.</string>
+    
+    <!-- Firmware Info -->
+    <string name="firmware_esp32">ESP32 Firmware</string>
+    <string name="firmware_version">Version: %1$s</string>
+    <string name="firmware_size">Size: %1$s</string>
+    <string name="firmware_date">Date: %1$s</string>
+    
+    <!-- Help -->
+    <string name="help_title">How to use</string>
+    <string name="help_content">1. Connect your ESP32 device via USB\n\n2. Select firmware from dropdown\n\n3. Choose baud rate (115200 recommended)\n\n4. Click \'Flash Firmware\' to start\n\n5. Wait for completion\n\nNote: Device must be in bootloader mode</string>
+    
+    <!-- About -->
+    <string name="about_title">About ESP32 Flash Tool</string>
+    <string name="about_content">Version 1.0\n\nA professional tool for flashing firmware to ESP32 microcontrollers via USB.\n\nDeveloped for easy deployment of custom firmware.</string>
+    
+    <!-- Progress -->
+    <string name="progress_percent">%1$d%%</string>
+    <string name="erasing">Erasing flash…</string>
+    <string name="writing">Writing firmware…</string>
 </resources>

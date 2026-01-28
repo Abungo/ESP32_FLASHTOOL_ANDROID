@@ -1,0 +1,7 @@
+com.physicaloid.PhysicaloidLibrary-pngs-0 /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/generated/res/pngs/release
+com.physicaloid.PhysicaloidLibrary-resValues-1 /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/generated/res/resValues/release
+com.physicaloid.PhysicaloidLibrary-mergeReleaseResources-2 /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/intermediates/incremental/release/mergeReleaseResources/merged.dir
+com.physicaloid.PhysicaloidLibrary-mergeReleaseResources-3 /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/intermediates/incremental/release/mergeReleaseResources/stripped.dir
+com.physicaloid.PhysicaloidLibrary-merged_res-4 /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/intermediates/merged_res/release
+com.physicaloid.PhysicaloidLibrary-main-5 /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/src/main/res
+com.physicaloid.PhysicaloidLibrary-release-6 /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/src/release/res

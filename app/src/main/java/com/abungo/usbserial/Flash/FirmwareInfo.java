@@ -3,17 +3,20 @@ package com.abungo.usbserial.Flash;
 import com.physicaloid.lib.Physicaloid;
 
 public class FirmwareInfo {
-    //UploadSTM32CallBack mUpCallback;
+    // UploadSTM32CallBack mUpCallback;
     Physicaloid lPhysicaloid;
 
-    public FirmwareInfo(/*UploadSTM32CallBack UpCallback,*/ Physicaloid mPhysi) {
+    public FirmwareInfo(/* UploadSTM32CallBack UpCallback, */ Physicaloid mPhysi) {
         // mUpCallback = UpCallback;
         lPhysicaloid = mPhysi;
     }
 
-    public void open(int baudRate) {
-        lPhysicaloid.open();
-        lPhysicaloid.setBaudrate(baudRate);
+    public boolean open(int baudRate) {
+        if (lPhysicaloid.open()) {
+            lPhysicaloid.setBaudrate(baudRate);
+            return true;
+        }
+        return false;
     }
 
     public int drain() {
@@ -64,7 +67,7 @@ public class FirmwareInfo {
 
     public String getFirmwarVersion() {
         String version = "";
-        //fast reading
+        // fast reading
         byte[] cmd0 = "f;".getBytes();
         lPhysicaloid.write(cmd0, cmd0.length);
         drain();
@@ -75,7 +78,7 @@ public class FirmwareInfo {
         byte buf[] = new byte[200];
         int retval = 0;
 
-        //String buffer = "";
+        // String buffer = "";
         retval = recv(buf, 200);
 
         if (retval > 0) {
@@ -83,7 +86,7 @@ public class FirmwareInfo {
 
             str = new String(buf);
 
-            //tvAppend(tvRead, "My String: " + str+"\n");
+            // tvAppend(tvRead, "My String: " + str+"\n");
             String config[] = str.split(",");
             if (config.length > 9)
                 version = config[8];
@@ -96,4 +99,3 @@ public class FirmwareInfo {
         lPhysicaloid.close();
     }
 }
-

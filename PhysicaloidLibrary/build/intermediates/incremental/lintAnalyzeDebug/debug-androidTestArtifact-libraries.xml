@@ -1,0 +1,19 @@
+<libraries>
+  <library
+      name="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar:unspecified@jar"
+      jars="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar"
+      resolved="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar:unspecified"/>
+  <library
+      name="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID@@:PhysicaloidLibrary::debug"
+      jars="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/.transforms/e8645d481f4f529862b4de76dbe04dd5/transformed/out/jars/classes.jar:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/.transforms/e8645d481f4f529862b4de76dbe04dd5/transformed/out/jars/libs/R.jar:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/.transforms/e8645d481f4f529862b4de76dbe04dd5/transformed/out/jars/libs/d2xx.jar"
+      resolved="USB Serial:PhysicaloidLibrary:unspecified"
+      folder="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/build/.transforms/e8645d481f4f529862b4de76dbe04dd5/transformed/out"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+</libraries>

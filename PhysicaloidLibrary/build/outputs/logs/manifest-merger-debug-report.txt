@@ -1,0 +1,29 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:1:1-10:12
+INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:1:1-10:12
+INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:1:1-10:12
+	package
+		ADDED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:2:5-30
+		INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml
+		INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml
+	android:versionName
+		ADDED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:4:5-30
+	xmlns:android
+		ADDED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:1:11-69
+	android:versionCode
+		ADDED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:3:5-28
+uses-sdk
+ADDED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:6:5-8:41
+INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:6:5-8:41
+INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:6:5-8:41
+INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:6:5-8:41
+INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:6:5-8:41
+	android:targetSdkVersion
+		ADDED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:8:9-38
+		INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml
+		INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml
+	android:minSdkVersion
+		ADDED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml:7:9-35
+		INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml
+		INJECTED from /home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/AndroidManifest.xml

@@ -1,239 +1,412 @@
 package com.abungo.usbserial.Flash;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
+
 import com.abungo.usbserial.R;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.physicaloid.lib.Boards;
 import com.physicaloid.lib.Physicaloid;
-import com.physicaloid.lib.programmer.avr.UploadErrors;
 import com.physicaloid.lib.usb.driver.uart.UartConfig;
+
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.content.Intent;
 
 public class FlashFirmware extends AppCompatActivity {
-  Physicaloid mPhysicaloid;
 
-  boolean recoverFirmware = false;
-  Boards mSelectedBoard;
-  Button btFlash;
+  // USB Serial
+  private Physicaloid mPhysicaloid;
+  private boolean deviceConnected = false;
 
   // UI Components
-  public AutoCompleteTextView spinnerFirmware;
-  public AutoCompleteTextView dropdownBaudRate;
-  TextView tvRead;
-  private AlertDialog.Builder builder = null;
-  private AlertDialog alert;
+  private AutoCompleteTextView spinnerFirmware;
+  private AutoCompleteTextView spinnerBaud;
+  private MaterialButton btFlash;
+  private MaterialButton btDetect;
+  private MaterialButton btClearLog;
+  private TextView tvRead;
+  private TextView tvDeviceStatus;
+  private TextView tvChipInfo;
+  private TextView tvProgressStatus;
+  private TextView tvProgressPercent;
+  private View statusIndicator;
+  private MaterialCardView progressCard;
+  private LinearProgressIndicator progressBar;
 
-  private ArrayList<Boards> mBoardList;
-  private UartConfig uartConfig;
-
-  // ESP32
+  // Configuration
+  private static final String DEFAULT_FIRMWARE_NAME = "Built-in ESP32 Firmware";
   private static final String ASSET_FILE_NAME_ESP32 = "firmwares/ESP32/20240222-v1.22.2.bin";
-  
   private String[] itemsBaudRate;
-  private String[] itemsFirmwares;
+  private List<String> firmwareList = new ArrayList<>();
+  private UartConfig uartConfig;
+  private File firmwaresDir;
 
-  // Executor for background tasks
+  // Threading
   private final ExecutorService executorService = Executors.newSingleThreadExecutor();
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+  // State
+  private boolean isFlashing = false;
+  private String detectedChip = null;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    // Toolbar setup
+    initializeViews();
+    setupToolbar();
+    setupDropdowns();
+    setupListeners();
+    initializeUSB();
+  }
+
+  private void initializeViews() {
+    // Toolbar
     MaterialToolbar toolbar = findViewById(R.id.topAppBar);
     setSupportActionBar(toolbar);
 
-    // UI Init
+    // Input fields
     spinnerFirmware = findViewById(R.id.spinnerFirmware);
-    dropdownBaudRate = findViewById(R.id.spinnerBaud);
+    spinnerBaud = findViewById(R.id.spinnerBaud);
+
+    // Buttons
     btFlash = findViewById(R.id.btFlash);
+    btDetect = findViewById(R.id.btDetect);
+    btClearLog = findViewById(R.id.btClearLog);
+
+    // Status views
+    tvDeviceStatus = findViewById(R.id.tvDeviceStatus);
+    tvChipInfo = findViewById(R.id.tvChipInfo);
+    statusIndicator = findViewById(R.id.statusIndicator);
+
+    // Log
     tvRead = findViewById(R.id.tvRead);
 
-    // Firmware Setup
-    itemsFirmwares = new String[] {"ESP32"}; // Removed ESP8266 as it was unimplemented
-    ArrayAdapter<String> adapterFirmware =
-        new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, itemsFirmwares);
-    spinnerFirmware.setAdapter(adapterFirmware);
-    spinnerFirmware.setText(itemsFirmwares[0], false); // Default selection
+    // Progress views
+    progressCard = findViewById(R.id.progressCard);
+    progressBar = findViewById(R.id.progressBar);
+    tvProgressStatus = findViewById(R.id.tvProgressStatus);
+    tvProgressPercent = findViewById(R.id.tvProgressPercent);
+  }
 
-    // Baud Rate Setup
-    itemsBaudRate =
-        new String[] {
-          "1200", "2400", "4800", "9600", "14400", "19200", "28800", "38400", "57600", "115200",
-          "230400", "921600"
-        };
-    ArrayAdapter<String> adapterBaudRate =
-        new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, itemsBaudRate);
-    dropdownBaudRate.setAdapter(adapterBaudRate);
-    dropdownBaudRate.setText("115200", false); // Default selection
+  private void setupToolbar() {
+    MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+    setSupportActionBar(toolbar);
+  }
 
-    // Physicaloid Init
-    mPhysicaloid = new Physicaloid(this);
-    mBoardList = new ArrayList<>();
-    for (Boards board : Boards.values()) {
-      if (board.support > 0) {
-        mBoardList.add(board);
+  private void setupDropdowns() {
+    refreshFirmwareList();
+
+    // Baud rate dropdown
+    itemsBaudRate = new String[] {
+        "9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"
+    };
+    ArrayAdapter<String> baudAdapter = new ArrayAdapter<>(
+        this,
+        android.R.layout.simple_dropdown_item_1line,
+        itemsBaudRate);
+    spinnerBaud.setAdapter(baudAdapter);
+    spinnerBaud.setText("115200", false);
+  }
+
+  private void refreshFirmwareList() {
+    firmwaresDir = new File(getFilesDir(), "uploaded_firmwares");
+    if (!firmwaresDir.exists()) {
+      firmwaresDir.mkdirs();
+    }
+
+    firmwareList.clear();
+    firmwareList.add(DEFAULT_FIRMWARE_NAME);
+
+    File[] files = firmwaresDir.listFiles();
+    if (files != null) {
+      Arrays.sort(files, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+      for (File f : files) {
+        firmwareList.add(f.getName());
       }
     }
 
-    if (!mBoardList.isEmpty()) {
-        mSelectedBoard = mBoardList.get(0);
-    }
+    ArrayAdapter<String> firmwareAdapter = new ArrayAdapter<>(
+        this,
+        android.R.layout.simple_dropdown_item_1line,
+        firmwareList);
+    spinnerFirmware.setAdapter(firmwareAdapter);
 
-    uartConfig =
-        new UartConfig(
-            115200,
-            UartConfig.DATA_BITS8,
-            UartConfig.STOP_BITS1,
-            UartConfig.PARITY_NONE,
-            false,
-            false);
-
-    btFlash.setEnabled(true);
-    if (mPhysicaloid.open()) {
-      mPhysicaloid.setConfig(uartConfig);
-      tvAppend(tvRead, "Device Opened.\n");
+    // Maintain selection if possible, otherwise default to first
+    String current = spinnerFirmware.getText().toString();
+    if (firmwareList.contains(current)) {
+      spinnerFirmware.setText(current, false);
     } else {
-      tvAppend(tvRead, "Cannot Open Device. Check connection or permissions.\n");
+      spinnerFirmware.setText(firmwareList.get(0), false);
     }
   }
 
   @Override
-  protected void onDestroy() {
-    super.onDestroy();
-    close();
-    executorService.shutdown();
+  protected void onResume() {
+    super.onResume();
+    refreshFirmwareList();
   }
 
-  public void onClickDismiss(View v) {
-    close();
-    finish();
+  private void setupListeners() {
+    btClearLog.setOnClickListener(v -> {
+      tvRead.setText(R.string.ready);
+    });
   }
 
-  public void onClickRecover(View v) {
-    tvRead.setText("Recovering Firmware...\n");
-    String selected = spinnerFirmware.getText().toString();
+  private void initializeUSB() {
+    mPhysicaloid = new Physicaloid(this);
+    uartConfig = new UartConfig(
+        115200,
+        UartConfig.DATA_BITS8,
+        UartConfig.STOP_BITS1,
+        UartConfig.PARITY_NONE,
+        false,
+        false);
 
-    if (selected.equals("ESP32")) {
-      recoverFirmware = true;
-      executeUploadESP32();
+    // Try to open device
+    executorService.execute(() -> {
+      boolean opened = mPhysicaloid.open();
+      mainHandler.post(() -> {
+        if (opened) {
+          mPhysicaloid.setConfig(uartConfig);
+          updateDeviceStatus(true, null);
+          appendLog("✓ Device connected and ready");
+        } else {
+          updateDeviceStatus(false, null);
+          appendLog("⚠ No USB device detected\nPlease connect ESP32 and grant USB permissions");
+        }
+      });
+    });
+  }
+
+  private void updateDeviceStatus(boolean connected, String chipType) {
+    deviceConnected = connected;
+    detectedChip = chipType;
+
+    if (connected) {
+      tvDeviceStatus.setText(R.string.device_connected);
+      statusIndicator.setBackgroundTintList(
+          ColorStateList.valueOf(ContextCompat.getColor(this, R.color.md_theme_light_tertiary)));
+
+      if (chipType != null) {
+        tvChipInfo.setText(getString(R.string.chip_detected, chipType));
+        tvChipInfo.setVisibility(View.VISIBLE);
+      } else {
+        tvChipInfo.setVisibility(View.GONE);
+      }
+
+      btFlash.setEnabled(!isFlashing);
+      btDetect.setEnabled(!isFlashing);
     } else {
-        tvAppend(tvRead, "Recovery not implemented for this selection.\n");
+      tvDeviceStatus.setText(R.string.device_disconnected);
+      statusIndicator.setBackgroundTintList(
+          ColorStateList.valueOf(ContextCompat.getColor(this, R.color.md_theme_light_error)));
+      tvChipInfo.setVisibility(View.GONE);
+
+      btFlash.setEnabled(false);
+      btDetect.setEnabled(false);
     }
   }
 
-  public void onClickDetect(View v) {
-    executeDetect();
+  private void appendLog(String message) {
+    mainHandler.post(() -> {
+      String currentText = tvRead.getText().toString();
+      if (currentText.equals(getString(R.string.ready))) {
+        tvRead.setText(message);
+      } else {
+        tvRead.append("\n" + message);
+      }
+    });
   }
 
-  public void onClickFirmwareInfo(View v) {
-    tvRead.setText("The following firmwares are available:\n");
-    tvRead.append(ASSET_FILE_NAME_ESP32 + "\n");
+  private void updateProgress(int percent, String status) {
+    mainHandler.post(() -> {
+      if (percent >= 0) {
+        progressCard.setVisibility(View.VISIBLE);
+        progressBar.setProgress(percent);
+        tvProgressPercent.setText(getString(R.string.progress_percent, percent));
+        if (status != null) {
+          tvProgressStatus.setText(status);
+        }
+      } else {
+        progressCard.setVisibility(View.GONE);
+      }
+    });
   }
 
   public void onClickFlash(View v) {
-    String selected = spinnerFirmware.getText().toString();
-    if (selected.equals("ESP32")) {
-      tvRead.setText("Loading ESP32 firmware...\n");
-      recoverFirmware = false;
-      executeUploadESP32();
-    } else {
-        tvAppend(tvRead, "Flashing not implemented for " + selected + "\n");
+    if (isFlashing) {
+      Toast.makeText(this, "Flash operation already in progress", Toast.LENGTH_SHORT).show();
+      return;
     }
+
+    if (!deviceConnected) {
+      Toast.makeText(this, R.string.no_device, Toast.LENGTH_SHORT).show();
+      return;
+    }
+
+    new AlertDialog.Builder(this)
+        .setTitle("Flash Firmware")
+        .setMessage(
+            "This will flash the firmware to your ESP32. Make sure the device is in bootloader mode.\n\nContinue?")
+        .setPositiveButton("Flash", (dialog, which) -> startFlashing())
+        .setNegativeButton("Cancel", null)
+        .show();
   }
 
-  // --- Background Tasks ---
+  private void startFlashing() {
+    isFlashing = true;
+    btFlash.setEnabled(false);
+    btDetect.setEnabled(false);
 
-  private void executeDetect() {
-    showProgressDialog("Detect Firmware", "Attempting to detect firmware...");
+    appendLog("\n━━━━━━━━━━━━━━━━━━━━━");
+    appendLog("Starting flash operation...");
+    updateProgress(0, getString(R.string.flashing));
 
     executorService.execute(() -> {
-        String version = "";
-        FirmwareInfo firm = new FirmwareInfo(mPhysicaloid);
-        if(firm.open(38400)) {
-             version = firm.getFirmwarVersion();
-        } else {
-            // Try to reopen if needed or log error
+      try {
+        CommandInterfaceESP32 cmd = new CommandInterfaceESP32(mUploadCallback, mPhysicaloid);
+
+        appendLog("Initializing chip...");
+        boolean initSuccess = cmd.initChip();
+
+        if (!initSuccess) {
+          mainHandler.post(() -> {
+            appendLog("✗ Failed to initialize chip");
+            Toast.makeText(this, R.string.flash_failed, Toast.LENGTH_LONG).show();
+            finishFlashing(false);
+          });
+          return;
         }
 
-        String finalVersion = version;
+        appendLog("✓ Chip initialized");
+
+        appendLog("Detecting chip type...");
+        int chip = cmd.detectChip();
+        String chipName = (chip == cmd.ESP32) ? "ESP32" : "Unknown";
+        mainHandler.post(() -> updateDeviceStatus(true, chipName));
+        appendLog("✓ Detected: " + chipName);
+
+        appendLog("Changing baud rate to 921600...");
+        cmd.changeBaudeRate();
+        appendLog("✓ Baud rate changed");
+
+        cmd.init();
+
+        appendLog("Reading firmware file...");
+        String selectedFirmware = spinnerFirmware.getText().toString();
+        InputStream file1;
+        if (selectedFirmware.equals(DEFAULT_FIRMWARE_NAME)) {
+          file1 = getAssets().open(ASSET_FILE_NAME_ESP32);
+        } else {
+          file1 = new FileInputStream(new File(firmwaresDir, selectedFirmware));
+        }
+        byte[] data = readFile(file1);
+
+        if (data.length == 0) {
+          mainHandler.post(() -> {
+            appendLog("✗ Firmware file is empty or could not be read");
+            Toast.makeText(this, R.string.flash_failed, Toast.LENGTH_LONG).show();
+            finishFlashing(false);
+          });
+          return;
+        }
+
+        appendLog("✓ Firmware loaded (" + (data.length / 1024) + " KB)");
+        appendLog("Flashing to address 0x1000...");
+
+        cmd.flashData(data, 0x1000, 0);
+
+        appendLog("Resetting chip...");
+        cmd.reset();
 
         mainHandler.post(() -> {
-            if (finalVersion == null || finalVersion.isEmpty()) {
-                tvAppend(tvRead, "Firmware Version Not Detected.\n");
-            } else {
-                tvAppend(tvRead, "Detected Firmware Version: " + finalVersion + "\n");
-                // Selection logic based on version could go here if mapped to spinner items
-            }
-            dismissProgressDialog();
+          appendLog("✓ Flash completed successfully!");
+          appendLog("━━━━━━━━━━━━━━━━━━━━━\n");
+          Toast.makeText(this, R.string.flash_success, Toast.LENGTH_LONG).show();
+          finishFlashing(true);
         });
+
+      } catch (IOException e) {
+        mainHandler.post(() -> {
+          appendLog("✗ Error: " + e.getMessage());
+          Toast.makeText(this, R.string.flash_failed, Toast.LENGTH_LONG).show();
+          finishFlashing(false);
+        });
+      }
     });
   }
 
-  private byte[] readFile(InputStream inputStream) throws IOException {
-    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        InputStream is = inputStream) {
-      byte[] buffer = new byte[1024];
-      int len;
-      while ((len = is.read(buffer)) != -1) {
-        byteArrayOutputStream.write(buffer, 0, len);
-      }
-      return byteArrayOutputStream.toByteArray();
+  private void finishFlashing(boolean success) {
+    isFlashing = false;
+    updateProgress(-1, null);
+    btFlash.setEnabled(deviceConnected);
+    btDetect.setEnabled(deviceConnected);
+  }
+
+  public void onClickDetect(View v) {
+    if (isFlashing) {
+      return;
     }
-  private void executeUploadESP32() {
-    showProgressDialog("Flashing Firmware", "Flashing Your Firmware...");
+
+    if (!deviceConnected) {
+      Toast.makeText(this, R.string.no_device, Toast.LENGTH_SHORT).show();
+      return;
+    }
+
+    btDetect.setEnabled(false);
+    appendLog("\nDetecting firmware...");
 
     executorService.execute(() -> {
-        String[] firmwareFileName = new String[4];
+      FirmwareInfo firm = new FirmwareInfo(mPhysicaloid);
+      String version = "";
 
-        if (!recoverFirmware) {
-            firmwareFileName[0] = ASSET_FILE_NAME_ESP32;
-            uploadESP32(firmwareFileName, mUploadSTM32Callback);
+      if (firm.open(38400)) {
+        version = firm.getFirmwarVersion();
+        firm.close();
+      }
+
+      String finalVersion = version;
+      mainHandler.post(() -> {
+        if (finalVersion != null && !finalVersion.isEmpty()) {
+          appendLog("✓ Detected firmware: " + finalVersion);
+        } else {
+          appendLog("✗ Could not detect firmware version");
         }
-
-        mainHandler.post(this::dismissProgressDialog);
+        btDetect.setEnabled(true);
+      });
     });
   }
 
-
-  private void showProgressDialog(String title, String message) {
-      builder = new AlertDialog.Builder(FlashFirmware.this);
-      builder.setMessage(message)
-          .setTitle(title)
-          .setCancelable(false)
-          .setNegativeButton("Cancel", (dialog, id) -> dialog.cancel());
-      alert = builder.create();
-      alert.show();
-  }
-
-  private void dismissProgressDialog() {
-      if (alert != null && alert.isShowing()) {
-          alert.dismiss();
-      }
-  }
-
-  // --- Helper Methods ---
-
   private byte[] readFile(InputStream inputStream) {
-    // Optimization: Use a 4KB buffer to reduce I/O overhead compared to byte-by-byte reading.
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
     byte[] buffer = new byte[4096];
     int length;
@@ -249,129 +422,85 @@ public class FlashFirmware extends AppCompatActivity {
     return byteArrayOutputStream.toByteArray();
   }
 
-  public void uploadESP32(String fileName[], UploadSTM32CallBack UpCallback) {
-    boolean failed = false;
-    InputStream file1 = null;
-    CommandInterfaceESP32 cmd;
+  private final UploadSTM32CallBack mUploadCallback = new UploadSTM32CallBack() {
 
-    cmd = new CommandInterfaceESP32(UpCallback, mPhysicaloid);
-
-    try {
-      file1 = getAssets().open(fileName[0]);
-    } catch (IOException e) {
-      tvAppend(tvRead, "Error: File not found " + fileName[0] + "\n");
-      return;
-    } catch (Exception e) {
-      e.printStackTrace();
-      tvAppend(tvRead, "Error opening file: " + e.getMessage() + "\n");
-      return;
+    @Override
+    public void onUploading(int value) {
+      updateProgress(value, getString(R.string.writing));
     }
 
-    dialogAppend("Starting ...");
-    boolean ret = cmd.initChip();
-    if (!ret) {
-       dialogAppend("Chip has not been initiated.");
-       failed = true;
-    } else {
-        dialogAppend("Chip Initiated.");
+    @Override
+    public void onInfo(String value) {
+      // Suppress verbose info messages
     }
 
-    if (!failed) {
-      int chip = cmd.detectChip();
-      if (chip == cmd.ESP32) {
-        tvAppend(tvRead, "Chip is ESP32\n");
-      }
-
-      dialogAppend("Changing baudrate to 921600");
-      cmd.changeBaudeRate();
-      cmd.init();
-
-      // Those are the files you want to flush
-      try {
-        dialogAppend("Flashing file 1 0x1000");
-        cmd.flashData(readFile(file1), 0x1000, 0);
-        /*
-        dialogAppend("Flashing file 2 0x1000");
-        cmd.flashData(readFile(file2), 0x1000, 0);
-
-        dialogAppend("Flashing file 3 0x10000");
-        cmd.flashData(readFile(file3), 0x10000, 0);
-        dialogAppend("Flashing file 4 0x8000");
-        cmd.flashData(readFile(file4), 0x8000, 0);
-        */
-      } catch (IOException e) {
-        e.printStackTrace();
-        tvAppend(tvRead, "Error reading file: " + e.getMessage() + "\n");
-      }
-      // we have finish flashing lets reset the board so that the program can start
-      cmd.reset();
-
-      dialogAppend("Done");
-      tvAppend(tvRead, "Done\n");
+    @Override
+    public void onPreUpload() {
+      updateProgress(0, getString(R.string.erasing));
     }
+
+    @Override
+    public void onPostUpload(boolean success) {
+      // Handled in main flow
+    }
+
+    @Override
+    public void onCancel() {
+      appendLog("✗ Operation cancelled");
+    }
+
+    @Override
+    public void onError(UploadSTM32Errors err) {
+      appendLog("✗ Error: " + err.toString());
+    }
+  };
+
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    getMenuInflater().inflate(R.menu.main_menu, menu);
+    return true;
   }
 
-  UploadSTM32CallBack mUploadSTM32Callback =
-      new UploadSTM32CallBack() {
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    int id = item.getItemId();
 
-        @Override
-        public void onUploading(int value) {
-          dialogAppend("Uploading " + value + " %");
-        }
+    if (id == R.id.action_help) {
+      showHelpDialog();
+      return true;
+    } else if (id == R.id.action_about) {
+      showAboutDialog();
+      return true;
+    } else if (id == R.id.action_manage_firmwares) {
+      startActivity(new Intent(this, ManageFirmwareActivity.class));
+      return true;
+    }
 
-        @Override
-        public void onInfo(String value) {
-          tvAppend(tvRead, value);
-        }
-
-        @Override
-        public void onPreUpload() {
-          tvAppend(tvRead, "Pre Upload...\n");
-        }
-
-        public void info(String value) {
-          tvAppend(tvRead, value);
-        }
-
-        @Override
-        public void onPostUpload(boolean success) {
-          mainHandler.post(() -> {
-              if (success) {
-                tvAppend(tvRead, "Upload Successful\n");
-              } else {
-                tvAppend(tvRead, "Upload Failed\n");
-              }
-              dismissProgressDialog();
-          });
-        }
-
-        @Override
-        public void onCancel() {
-          tvAppend(tvRead, "Upload Cancelled\n");
-        }
-
-        @Override
-        public void onError(UploadSTM32Errors err) {
-          tvAppend(tvRead, "Upload Error: " + err.toString() + "\n");
-        }
-      };
-
-
-  private void tvAppend(TextView tv, CharSequence text) {
-    mainHandler.post(() -> tv.append(text));
+    return super.onOptionsItemSelected(item);
   }
 
-  private void dialogAppend(CharSequence text) {
-    mainHandler.post(() -> {
-        if (alert != null && alert.isShowing()) {
-            alert.setMessage(text);
-        }
-    });
+  private void showHelpDialog() {
+    new AlertDialog.Builder(this)
+        .setTitle(R.string.help_title)
+        .setMessage(R.string.help_content)
+        .setPositiveButton(R.string.ok, null)
+        .show();
   }
 
-  private void close() {
+  private void showAboutDialog() {
+    new AlertDialog.Builder(this)
+        .setTitle(R.string.about_title)
+        .setMessage(R.string.about_content)
+        .setPositiveButton(R.string.ok, null)
+        .show();
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
     if (mPhysicaloid != null) {
-        mPhysicaloid.close();
+      mPhysicaloid.close();
     }
+    executorService.shutdown();
   }
 }

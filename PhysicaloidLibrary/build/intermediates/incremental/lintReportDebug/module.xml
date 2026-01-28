@@ -1,0 +1,18 @@
+<lint-module
+    format="1"
+    dir="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary"
+    name=":PhysicaloidLibrary"
+    type="LIBRARY"
+    maven="USB Serial:PhysicaloidLibrary:"
+    agpVersion="8.0.0"
+    buildFolder="build"
+    bootClassPath="/home/abungo/Android/Sdk/platforms/android-33/android.jar:/home/abungo/Android/Sdk/build-tools/30.0.3/core-lambda-stubs.jar"
+    javaSourceLevel="11"
+    compileTarget="android-33"
+    neverShrinking="true">
+  <lintOptions
+      absolutePaths="true"
+      checkReleaseBuilds="true"
+      explainIssues="true"/>
+  <variant name="debug"/>
+</lint-module>

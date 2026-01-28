@@ -1,0 +1,6 @@
+<libraries>
+  <library
+      name="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar:unspecified@jar"
+      jars="/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar"
+      resolved="__local_aars__:/home/abungo/AndroidStudioProjects/ESP32_FLASHTOOL_ANDROID/PhysicaloidLibrary/libs/d2xx.jar:unspecified"/>
+</libraries>

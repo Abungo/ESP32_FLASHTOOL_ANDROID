@@ -1,4 +1,5 @@
 package com.abungo.usbserial.Flash;
+
 /**
  *   @description: This is used to flash the ESP32 altimeter firmware from the Android device using an OTG cable
  *   so that the store Android application is compatible with the altimeter.
@@ -21,8 +22,6 @@ import com.physicaloid.lib.Physicaloid;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.Deflater;
-
-
 
 public class CommandInterfaceESP32 {
     public static int ESP_FLASH_BLOCK = 0x400;
@@ -100,6 +99,7 @@ public class CommandInterfaceESP32 {
         byte retValue[] = new byte[512];
 
     }
+
     UploadSTM32CallBack mUpCallback;
     Physicaloid mPhysicaloid;
 
@@ -108,11 +108,10 @@ public class CommandInterfaceESP32 {
         mPhysicaloid = mPhysi;
     }
 
-
     /*
-    *  Init chip
-    *
-    */
+     * Init chip
+     *
+     */
     public boolean initChip() {
         boolean syncSuccess = false;
         // initalize at 115200 bauds
@@ -129,15 +128,15 @@ public class CommandInterfaceESP32 {
 
         drain();
 
-        mUpCallback.onInfo("Sync"  + "\n");
+        mUpCallback.onInfo("Sync" + "\n");
         // first do the sync
         for (int i = 0; i < 3; i++) {
-            mUpCallback.onInfo("Sync attempt:"  + (i+1)+ "\n");
+            mUpCallback.onInfo("Sync attempt:" + (i + 1) + "\n");
             if (sync() == 0) {
 
             } else {
                 syncSuccess = true;
-                mUpCallback.onInfo("Sync Success!!!"  + "\n");
+                mUpCallback.onInfo("Sync Success!!!" + "\n");
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -150,12 +149,12 @@ public class CommandInterfaceESP32 {
     }
 
     public void changeBaudeRate() {
-        byte pkt[] = _appendArray(_int_to_bytearray(921600),_int_to_bytearray(0));
+        byte pkt[] = _appendArray(_int_to_bytearray(921600), _int_to_bytearray(0));
         sendCommand((byte) ESP_CHANGE_BAUDRATE, pkt, 0, 100);
 
         // second we change the comport baud rate
         mPhysicaloid.setBaudrate(921600);
-        mUpCallback.onInfo("Changing baud rate to 921600"  + "\n");
+        mUpCallback.onInfo("Changing baud rate to 921600" + "\n");
         // let's wait
         try {
             Thread.sleep(50);
@@ -171,9 +170,9 @@ public class CommandInterfaceESP32 {
         int retval = 0;
         long endTime;
         long startTime = System.currentTimeMillis();
-        while(true) {
-            retval = mPhysicaloid.read(buf,1);
-            if(retval > 0) {
+        while (true) {
+            retval = mPhysicaloid.read(buf, 1);
+            if (retval > 0) {
 
             } else {
                 try {
@@ -184,7 +183,9 @@ public class CommandInterfaceESP32 {
                 }
             }
             endTime = System.currentTimeMillis();
-            if((endTime - startTime) > 1000) {break;}
+            if ((endTime - startTime) > 1000) {
+                break;
+            }
         }
         return retval;
     }
@@ -242,12 +243,15 @@ public class CommandInterfaceESP32 {
         byte buf[] = slipEncode(data);
 
         ret = mPhysicaloid.write(buf, buf.length);
-        try { Thread.sleep(5); } catch (InterruptedException e) {}
-        
+        try {
+            Thread.sleep(5);
+        } catch (InterruptedException e) {
+        }
+
         int numRead = 0;
-        
+
         for (i = 0; i < 10; i++) {
-            numRead = recv(retVal.retValue, retVal.retValue.length, timeout/5);
+            numRead = recv(retVal.retValue, retVal.retValue.length, timeout / 5);
             // mUpCallback.onInfo("num read:" + numRead);
             if (numRead == 0) {
                 retVal.retCode = -1;
@@ -258,7 +262,7 @@ public class CommandInterfaceESP32 {
             }
 
             if (retVal.retValue[0] != (byte) 0xC0) {
-                //mUpCallback.onInfo("invalid packet\n");
+                // mUpCallback.onInfo("invalid packet\n");
                 // System.out.println("Packet: " + printHex(retVal.retValue));
                 retVal.retCode = -1;
                 continue;
@@ -274,6 +278,7 @@ public class CommandInterfaceESP32 {
 
         return retVal;
     }
+
     private int recv(byte[] buf, int length, long timeout) {
         int retval = 0;
         int totalRetval = 0;
@@ -283,59 +288,63 @@ public class CommandInterfaceESP32 {
 
         while (true) {
             retval = mPhysicaloid.read(tmpbuf, length);
-            //            retval = mSerial.read(tmpbuf);
+            // retval = mSerial.read(tmpbuf);
             if (retval > 0) {
                 System.arraycopy(tmpbuf, 0, buf, totalRetval, retval);
                 totalRetval += retval;
                 startTime = System.currentTimeMillis();
-                //if (DEBUG_SHOW_RECV) {
-                //    Log.d(TAG, "recv(" + retval + ") : " + toHexStr(buf, totalRetval));
-                //}
+                // if (DEBUG_SHOW_RECV) {
+                // Log.d(TAG, "recv(" + retval + ") : " + toHexStr(buf, totalRetval));
+                // }
             }
-            
-            if (totalRetval >= 8) { 
+
+            if (totalRetval >= 8) {
                 break;
             }
 
             endTime = System.currentTimeMillis();
             if ((endTime - startTime) > timeout) {
-                //Log.e(TAG, "recv timeout.");
+                // Log.e(TAG, "recv timeout.");
                 break;
             }
         }
         return retval;
     }
-    /*private int _wait_for_ack( long timeout, byte readVal[]) {
-        long stop = System.currentTimeMillis() + timeout;
-        byte got[] =new byte[1];
-        while (mPhysicaloid.read(got) <1) {
-            if (System.currentTimeMillis() > stop)
-                break;
-        }
-        if (got[0] == (byte) 0xC0) {
-            mUpCallback.onInfo("We have a start byte\n");
-            byte readByte[] = new byte[1];
-            readByte[0] = got[0];
-            while(mPhysicaloid.read(got,1)>0) {
-                mUpCallback.onInfo("We have another one\n");
-                readByte =_appendArray(readByte,got);
-                if (System.currentTimeMillis() > stop)
-                    break;
-            }
-            mUpCallback.onInfo(readByte.toString());
-            readVal = readByte;
-            return readVal.length;
-        }
-        else {
-            //tvAppend(tvRead,info + " Not 0x79");
-            //mUpCallback.onInfo(info+ "This is Not 0x79");
-            mUpCallback.onInfo("not receiving!!!\n");
-            return 0;
-        }
-    }*/
+
+    /*
+     * private int _wait_for_ack( long timeout, byte readVal[]) {
+     * long stop = System.currentTimeMillis() + timeout;
+     * byte got[] =new byte[1];
+     * while (mPhysicaloid.read(got) <1) {
+     * if (System.currentTimeMillis() > stop)
+     * break;
+     * }
+     * if (got[0] == (byte) 0xC0) {
+     * mUpCallback.onInfo("We have a start byte\n");
+     * byte readByte[] = new byte[1];
+     * readByte[0] = got[0];
+     * while(mPhysicaloid.read(got,1)>0) {
+     * mUpCallback.onInfo("We have another one\n");
+     * readByte =_appendArray(readByte,got);
+     * if (System.currentTimeMillis() > stop)
+     * break;
+     * }
+     * mUpCallback.onInfo(readByte.toString());
+     * readVal = readByte;
+     * return readVal.length;
+     * }
+     * else {
+     * //tvAppend(tvRead,info + " Not 0x79");
+     * //mUpCallback.onInfo(info+ "This is Not 0x79");
+     * mUpCallback.onInfo("not receiving!!!\n");
+     * return 0;
+     * }
+     * }
+     */
     /*
      * This will do a SLIP encode
-     * Optimized to use ByteArrayOutputStream to avoid O(N^2) complexity from repeated array copying.
+     * Optimized to use ByteArrayOutputStream to avoid O(N^2) complexity from
+     * repeated array copying.
      */
     public byte[] slipEncode(byte buffer[]) {
         ByteArrayOutputStream encoded = new ByteArrayOutputStream(buffer.length + 20);
@@ -365,7 +374,10 @@ public class CommandInterfaceESP32 {
     public void reset() {
 
         mPhysicaloid.setDtrRts(false, true);
-        try { Thread.sleep(100); } catch (InterruptedException e) {}
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+        }
         mPhysicaloid.setDtrRts(true, false);
 
     }
@@ -378,7 +390,7 @@ public class CommandInterfaceESP32 {
         // reset bootloader
 
         mPhysicaloid.setDtrRts(false, true);
-        mUpCallback.onInfo("Entering bootloader mode"  + "\n");
+        mUpCallback.onInfo("Entering bootloader mode" + "\n");
 
         try {
             Thread.sleep(100);
@@ -394,15 +406,13 @@ public class CommandInterfaceESP32 {
     }
 
     /**
-     * @name flash_defl_block Send one compressed block of data to program into SPI Flash memory
+     * @name flash_defl_block Send one compressed block of data to program into SPI
+     *       Flash memory
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
         // Optimized packet construction to avoid multiple array allocations and copies
         byte[] pkt = new byte[16 + data.length];
-
-        // Optimized: Allocate single buffer and use arraycopy to avoid O(N) allocations/copies
-        byte pkt[] = new byte[16 + data.length];
         putInt(pkt, 0, data.length);
         putInt(pkt, 4, seq);
         putInt(pkt, 8, 0);
@@ -424,25 +434,24 @@ public class CommandInterfaceESP32 {
         int _flashsize = 4 * 1024 * 1024;
 
         if (!IS_STUB) {
-            //System.out.println("No stub...");
-            byte pkt[] = _appendArray(_int_to_bytearray(0),_int_to_bytearray(0));
+            // System.out.println("No stub...");
+            byte pkt[] = _appendArray(_int_to_bytearray(0), _int_to_bytearray(0));
             sendCommand((byte) ESP_SPI_ATTACH, pkt, 0, 100);
         }
 
         // We are hardcoding 4MB flash for an ESP32
-        //System.out.println("Configuring flash size...");
-        mUpCallback.onInfo("Configuring flash size..."  + "\n");
+        // System.out.println("Configuring flash size...");
+        mUpCallback.onInfo("Configuring flash size..." + "\n");
 
-        byte pkt2[] = _appendArray(_int_to_bytearray(0),_int_to_bytearray(_flashsize));
-        pkt2 = _appendArray(pkt2,_int_to_bytearray(0x10000));
-        pkt2 = _appendArray(pkt2,_int_to_bytearray(4096));
-        pkt2 = _appendArray(pkt2,_int_to_bytearray(256));
-        pkt2 = _appendArray(pkt2,_int_to_bytearray(0xFFFF));
+        byte pkt2[] = _appendArray(_int_to_bytearray(0), _int_to_bytearray(_flashsize));
+        pkt2 = _appendArray(pkt2, _int_to_bytearray(0x10000));
+        pkt2 = _appendArray(pkt2, _int_to_bytearray(4096));
+        pkt2 = _appendArray(pkt2, _int_to_bytearray(256));
+        pkt2 = _appendArray(pkt2, _int_to_bytearray(0xFFFF));
 
         sendCommand((byte) ESP_SPI_SET_PARAMS, pkt2, 0, 100);
 
     }
-
 
     /**
      * @name flashData Program a full, uncompressed binary file into SPI Flash at a
@@ -466,10 +475,10 @@ public class CommandInterfaceESP32 {
 
         while (image.length - position > 0) {
 
-            double percentage = Math.floor((double)(100 * (seq + 1)) / (double)blocks);
+            double percentage = Math.floor((double) (100 * (seq + 1)) / (double) blocks);
 
             mUpCallback.onInfo("percentage: " + percentage + "\n");
-            mUpCallback.onUploading( (int) percentage);
+            mUpCallback.onUploading((int) percentage);
 
             byte block[];
 
@@ -481,11 +490,13 @@ public class CommandInterfaceESP32 {
 
                 // we have an incomplete block (ie: less than 1024) so let pad the missing block
                 // with 0xFF
-                /*byte tempArray[] = new byte[FLASH_WRITE_SIZE - block.length];
-                for (int i = 0; i < tempArray.length; i++) {
-                    tempArray[i] = (byte) 0xFF;
-                }
-                block = _appendArray(block, tempArray);*/
+                /*
+                 * byte tempArray[] = new byte[FLASH_WRITE_SIZE - block.length];
+                 * for (int i = 0; i < tempArray.length; i++) {
+                 * tempArray[i] = (byte) 0xFF;
+                 * }
+                 * block = _appendArray(block, tempArray);
+                 */
             }
 
             flash_defl_block(block, seq, 100);
@@ -507,7 +518,7 @@ public class CommandInterfaceESP32 {
 
         int write_size, timeout;
         if (IS_STUB) {
-            //using a stub (will use it in the future)
+            // using a stub (will use it in the future)
             write_size = size;
             timeout = 3000;
         } else {
@@ -515,7 +526,7 @@ public class CommandInterfaceESP32 {
             timeout = timeout_per_mb(ERASE_REGION_TIMEOUT_PER_MB, write_size);
         }
 
-        mUpCallback.onInfo("Compressed " + size + " bytes to " + compsize + "..."+ "\n");
+        mUpCallback.onInfo("Compressed " + size + " bytes to " + compsize + "..." + "\n");
 
         byte pkt[] = _appendArray(_int_to_bytearray(write_size), _int_to_bytearray(num_blocks));
         pkt = _appendArray(pkt, _int_to_bytearray(FLASH_WRITE_SIZE));
@@ -537,7 +548,7 @@ public class CommandInterfaceESP32 {
      * Send a command to the chip to find out what type it is
      */
     public int detectChip() {
-        int chipMagicValue =readRegister(CHIP_DETECT_MAGIC_REG_ADDR);
+        int chipMagicValue = readRegister(CHIP_DETECT_MAGIC_REG_ADDR);
 
         int ret = 0;
         if (chipMagicValue == 0xfff0c101)
@@ -586,13 +597,6 @@ public class CommandInterfaceESP32 {
         return c;
     }
 
-    private void putInt(byte[] buf, int offset, int i) {
-        buf[offset] = (byte) (i & 0xff);
-        buf[offset+1] = (byte) ((i >> 8) & 0xff);
-        buf[offset+2] = (byte) ((i >> 16) & 0xff);
-        buf[offset+3] = (byte) ((i >> 24) & 0xff);
-    }
-
     /*
      * Calculate the checksum.
      */
@@ -608,7 +612,7 @@ public class CommandInterfaceESP32 {
     public int read_reg(int addr, int timeout) {
         cmdRet val;
         byte pkt[] = _int_to_bytearray(addr);
-        val = sendCommand((byte)ESP_READ_REG, pkt, 0, timeout);
+        val = sendCommand((byte) ESP_READ_REG, pkt, 0, timeout);
         return val.retValue[0];
     }
 
@@ -619,7 +623,7 @@ public class CommandInterfaceESP32 {
     public int readRegister(int reg) {
 
         long retVals[] = { 0 };
-        //int retVals = 0;
+        // int retVals = 0;
         cmdRet ret;
 
         Struct struct = new Struct();
@@ -638,21 +642,20 @@ public class CommandInterfaceESP32 {
             subArray[3] = ret.retValue[8];
 
             retVals = myRet.unpack("I", subArray);
-            //retVals =_bytearray_to_int(ret.retValue[5], ret.retValue[6], ret.retValue[7], ret.retValue[8]);
+            // retVals =_bytearray_to_int(ret.retValue[5], ret.retValue[6], ret.retValue[7],
+            // ret.retValue[8]);
 
-            //System.out.println(	"retVals:"+retVals);
+            // System.out.println( "retVals:"+retVals);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return (int) retVals[0];
     }
 
-
-
     /**
      * @name timeoutPerMb Scales timeouts which are size-specific
      */
-    private  int timeout_per_mb(int seconds_per_mb, int size_bytes) {
+    private int timeout_per_mb(int seconds_per_mb, int size_bytes) {
         int result = seconds_per_mb * (size_bytes / 1000000);
         if (result < 3000) {
             return 3000;
@@ -667,18 +670,9 @@ public class CommandInterfaceESP32 {
         return ret;
     }
 
-    private void putInt(byte[] buffer, int offset, int val) {
-        buffer[offset] = (byte) (val & 0xff);
-        buffer[offset + 1] = (byte) ((val >> 8) & 0xff);
-        buffer[offset + 2] = (byte) ((val >> 16) & 0xff);
-        buffer[offset + 3] = (byte) ((val >> 24) & 0xff);
-    }
-
     private int _bytearray_to_int(byte i, byte j, byte k, byte l) {
-        return ((int)i | (int)(j << 8) | (int)(k << 16) | (int)(l << 24));
+        return ((int) i | (int) (j << 8) | (int) (k << 16) | (int) (l << 24));
     }
-
-
 
     /**
      * Compress a byte array using ZLIB compression

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.0.0" type="incidents">
+
+    <incident
+        id="GradleOverrides"
+        severity="warning"
+        message="This `minSdkVersion` value (`12`) is not used; it is always overridden by the value specified in the Gradle build script (`14`)">
+        <location
+            file="${:PhysicaloidLibrary*debug*sourceProvider*0*manifest*0}"
+            line="7"
+            column="9"
+            startOffset="182"
+            endLine="7"
+            endColumn="35"
+            endOffset="208"/>
+    </incident>
+
+    <incident
+        id="GradleOverrides"
+        severity="warning"
+        message="This `targetSdkVersion` value (`12`) is not used; it is always overridden by the value specified in the Gradle build script (`33`)">
+        <location
+            file="${:PhysicaloidLibrary*debug*sourceProvider*0*manifest*0}"
+            line="8"
+            column="9"
+            startOffset="217"
+            endLine="8"
+            endColumn="38"
+            endOffset="246"/>
+    </incident>
+
+    <incident
+        id="OldTargetApi"
+        severity="warning"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details.">
+        <fix-replace
+            description="Update targetSdkVersion to 36"
+            oldPattern="targetSdkVersion\s*=\s*[&quot;&apos;](.*)[&quot;&apos;]"
+            replacement="36"/>
+        <location
+            file="${:PhysicaloidLibrary*debug*sourceProvider*0*manifest*0}"
+            line="8"
+            column="9"
+            startOffset="217"
+            endLine="8"
+            endColumn="38"
+            endOffset="246"/>
+    </incident>
+
+    <incident
+        id="SuspiciousIndentation"
+        severity="error"
+        message="Suspicious indentation: This is indented but is not nested under the previous expression (`while(bRetry) {     `...)">
+        <location
+            file="${:PhysicaloidLibrary*debug*sourceProvider*0*javaDir*0}/com/physicaloid/lib/programmer/avr/Stk500.java"
+            line="530"
+            column="11"
+            startOffset="21438"
+            endLine="530"
+            endColumn="35"
+            endOffset="21462"/>
+        <location
+            file="${:PhysicaloidLibrary*debug*sourceProvider*0*javaDir*0}/com/physicaloid/lib/programmer/avr/Stk500.java"
+            line="418"
+            column="9"
+            startOffset="17459"
+            endLine="418"
+            endColumn="24"
+            endOffset="17474"
+            message="Previous statement here"/>
+    </incident>
+
+    <incident
+        id="SuspiciousIndentation"
+        severity="error"
+        message="Suspicious indentation: This is indented but is not nested under the previous expression (`while (bRetry) {    `...)">
+        <location
+            file="${:PhysicaloidLibrary*debug*sourceProvider*0*javaDir*0}/com/physicaloid/lib/programmer/avr/Stk500V2.java"
+            line="619"
+            column="13"
+            startOffset="24120"
+            endLine="619"
+            endColumn="22"
+            endOffset="24129"/>
+        <location
+            file="${:PhysicaloidLibrary*debug*sourceProvider*0*javaDir*0}/com/physicaloid/lib/programmer/avr/Stk500V2.java"
+            line="541"
+            column="9"
+            startOffset="20542"
+            endLine="541"
+            endColumn="25"
+            endOffset="20558"
+            message="Previous statement here"/>
+    </incident>
+
+    <incident
+        id="OldTargetApi"
+        severity="warning"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details.">
+        <fix-replace
+            description="Update targetSdkVersion to 36"
+            oldString="33"
+            replacement="36"/>
+        <location
+            file="${:PhysicaloidLibrary*projectDir}/build.gradle"
+            line="11"
+            column="9"
+            startOffset="149"
+            endLine="11"
+            endColumn="21"
+            endOffset="161"/>
+    </incident>
+
+</incidents>
