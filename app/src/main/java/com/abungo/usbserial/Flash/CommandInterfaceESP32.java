@@ -335,6 +335,7 @@ public class CommandInterfaceESP32 {
     }*/
     /*
      * This will do a SLIP encode
+     * Optimized to use ByteArrayOutputStream to avoid O(N^2) complexity from repeated array copying.
      */
     public byte[] slipEncode(byte buffer[]) {
         ByteArrayOutputStream encoded = new ByteArrayOutputStream(buffer.length + 20);
@@ -400,25 +401,22 @@ public class CommandInterfaceESP32 {
         // Optimized packet construction to avoid multiple array allocations and copies
         byte[] pkt = new byte[16 + data.length];
 
-        int len = data.length;
-        // 0-3: data.length (Little Endian)
-        pkt[0] = (byte) (len & 0xff);
-        pkt[1] = (byte) ((len >> 8) & 0xff);
-        pkt[2] = (byte) ((len >> 16) & 0xff);
-        pkt[3] = (byte) ((len >> 24) & 0xff);
-
-        // 4-7: seq (Little Endian)
-        pkt[4] = (byte) (seq & 0xff);
-        pkt[5] = (byte) ((seq >> 8) & 0xff);
-        pkt[6] = (byte) ((seq >> 16) & 0xff);
-        pkt[7] = (byte) ((seq >> 24) & 0xff);
-
-        // 8-15: 0 (Already 0 initialized)
-
-        // 16+: data
-        System.arraycopy(data, 0, pkt, 16, len);
+        // Optimized: Allocate single buffer and use arraycopy to avoid O(N) allocations/copies
+        byte pkt[] = new byte[16 + data.length];
+        putInt(pkt, 0, data.length);
+        putInt(pkt, 4, seq);
+        putInt(pkt, 8, 0);
+        putInt(pkt, 12, 0);
+        System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
+    }
+
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset + 1] = (byte) ((i >> 8) & 0xff);
+        buf[offset + 2] = (byte) ((i >> 16) & 0xff);
+        buf[offset + 3] = (byte) ((i >> 24) & 0xff);
     }
 
     public void init() {
@@ -570,6 +568,7 @@ public class CommandInterfaceESP32 {
 
     /*
      * This takes 2 arrays as params and return a concatenate array
+     * Optimized to use System.arraycopy for better performance.
      */
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
         byte c[] = new byte[arr1.length + arr2.length];
@@ -585,6 +584,13 @@ public class CommandInterfaceESP32 {
         byte c[] = new byte[length];
         System.arraycopy(arr1, pos, c, 0, length);
         return c;
+    }
+
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset+1] = (byte) ((i >> 8) & 0xff);
+        buf[offset+2] = (byte) ((i >> 16) & 0xff);
+        buf[offset+3] = (byte) ((i >> 24) & 0xff);
     }
 
     /*
