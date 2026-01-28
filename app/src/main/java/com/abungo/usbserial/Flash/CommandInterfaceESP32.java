@@ -398,6 +398,8 @@ public class CommandInterfaceESP32 {
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
+        // Optimized packet construction to avoid multiple array allocations and copies
+        byte[] pkt = new byte[16 + data.length];
 
         // Optimized: Allocate single buffer and use arraycopy to avoid O(N) allocations/copies
         byte pkt[] = new byte[16 + data.length];
