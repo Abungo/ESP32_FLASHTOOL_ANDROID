@@ -407,7 +407,6 @@ public class CommandInterfaceESP32 {
         System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
-
     }
 
     private void putInt(byte[] buf, int offset, int i) {
@@ -568,7 +567,6 @@ public class CommandInterfaceESP32 {
      * This takes 2 arrays as params and return a concatenate array
      */
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
-
         byte c[] = new byte[arr1.length + arr2.length];
         System.arraycopy(arr1, 0, c, 0, arr1.length);
         System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
@@ -579,10 +577,16 @@ public class CommandInterfaceESP32 {
      * get part of an array
      */
     private byte[] _subArray(byte arr1[], int pos, int length) {
-
         byte c[] = new byte[length];
         System.arraycopy(arr1, pos, c, 0, length);
         return c;
+    }
+
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset+1] = (byte) ((i >> 8) & 0xff);
+        buf[offset+2] = (byte) ((i >> 16) & 0xff);
+        buf[offset+3] = (byte) ((i >> 24) & 0xff);
     }
 
     /*
