@@ -335,6 +335,7 @@ public class CommandInterfaceESP32 {
     }*/
     /*
      * This will do a SLIP encode
+     * Optimized to use ByteArrayOutputStream to avoid O(N^2) complexity from repeated array copying.
      */
     public byte[] slipEncode(byte buffer[]) {
         ByteArrayOutputStream encoded = new ByteArrayOutputStream(buffer.length + 20);
@@ -565,6 +566,7 @@ public class CommandInterfaceESP32 {
 
     /*
      * This takes 2 arrays as params and return a concatenate array
+     * Optimized to use System.arraycopy for better performance.
      */
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
         byte c[] = new byte[arr1.length + arr2.length];
