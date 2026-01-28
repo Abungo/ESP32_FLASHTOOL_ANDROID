@@ -397,19 +397,20 @@ public class CommandInterfaceESP32 {
      * @name flash_defl_block Send one compressed block of data to program into SPI Flash memory
      */
 
-    public void flash_defl_block(byte data[], int seq, int timeout) {
-        // Optimized packet construction to avoid multiple array allocations and copies
-        byte[] pkt = new byte[16 + data.length];
-
+    public void flash_defl_block(byte data[], int offset, int length, int seq, int timeout) {
         // Optimized: Allocate single buffer and use arraycopy to avoid O(N) allocations/copies
-        byte pkt[] = new byte[16 + data.length];
-        putInt(pkt, 0, data.length);
+        byte pkt[] = new byte[16 + length];
+        putInt(pkt, 0, length);
         putInt(pkt, 4, seq);
         putInt(pkt, 8, 0);
         putInt(pkt, 12, 0);
-        System.arraycopy(data, 0, pkt, 16, data.length);
+        System.arraycopy(data, offset, pkt, 16, length);
 
-        sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
+        sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data, offset, length), timeout);
+    }
+
+    public void flash_defl_block(byte data[], int seq, int timeout) {
+        flash_defl_block(data, 0, data.length, seq, timeout);
     }
 
     private void putInt(byte[] buf, int offset, int i) {
@@ -471,26 +472,17 @@ public class CommandInterfaceESP32 {
             mUpCallback.onInfo("percentage: " + percentage + "\n");
             mUpCallback.onUploading( (int) percentage);
 
-            byte block[];
-
+            int len;
             if (image.length - position >= FLASH_WRITE_SIZE) {
-                block = _subArray(image, position, FLASH_WRITE_SIZE);
+                len = FLASH_WRITE_SIZE;
             } else {
                 // Pad the last block
-                block = _subArray(image, position, image.length - position);
-
-                // we have an incomplete block (ie: less than 1024) so let pad the missing block
-                // with 0xFF
-                /*byte tempArray[] = new byte[FLASH_WRITE_SIZE - block.length];
-                for (int i = 0; i < tempArray.length; i++) {
-                    tempArray[i] = (byte) 0xFF;
-                }
-                block = _appendArray(block, tempArray);*/
+                len = image.length - position;
             }
 
-            flash_defl_block(block, seq, 100);
+            flash_defl_block(image, position, len, seq, 100);
             seq += 1;
-            written += block.length;
+            written += len;
             position += FLASH_WRITE_SIZE;
         }
 
@@ -586,23 +578,20 @@ public class CommandInterfaceESP32 {
         return c;
     }
 
-    private void putInt(byte[] buf, int offset, int i) {
-        buf[offset] = (byte) (i & 0xff);
-        buf[offset+1] = (byte) ((i >> 8) & 0xff);
-        buf[offset+2] = (byte) ((i >> 16) & 0xff);
-        buf[offset+3] = (byte) ((i >> 24) & 0xff);
-    }
-
     /*
      * Calculate the checksum.
      */
-    public int _checksum(byte[] data) {
+    public int _checksum(byte[] data, int offset, int length) {
         int chk = ESP_CHECKSUM_MAGIC;
         int x = 0;
-        for (x = 0; x < data.length; x++) {
-            chk ^= data[x];
+        for (x = 0; x < length; x++) {
+            chk ^= data[offset + x];
         }
         return chk;
+    }
+
+    public int _checksum(byte[] data) {
+        return _checksum(data, 0, data.length);
     }
 
     public int read_reg(int addr, int timeout) {
@@ -665,13 +654,6 @@ public class CommandInterfaceESP32 {
         byte ret[] = { (byte) (i & 0xff), (byte) ((i >> 8) & 0xff), (byte) ((i >> 16) & 0xff),
                 (byte) ((i >> 24) & 0xff) };
         return ret;
-    }
-
-    private void putInt(byte[] buffer, int offset, int val) {
-        buffer[offset] = (byte) (val & 0xff);
-        buffer[offset + 1] = (byte) ((val >> 8) & 0xff);
-        buffer[offset + 2] = (byte) ((val >> 16) & 0xff);
-        buffer[offset + 3] = (byte) ((val >> 24) & 0xff);
     }
 
     private int _bytearray_to_int(byte i, byte j, byte k, byte l) {

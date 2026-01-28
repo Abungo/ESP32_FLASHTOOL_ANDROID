@@ -9,3 +9,7 @@ In a microbenchmark, replacing manual loops with `System.arraycopy` yielded a ~3
 ## 2024-05-25 - Packet Construction Optimization
 **Learning:** Repeatedly appending to byte arrays to build fixed-structure packets (header + payload) creates excessive garbage and is O(N) with high constant factors.
 **Action:** For fixed-size or known-size packets, pre-allocate a single `byte[]` buffer and populate it using offsets and `System.arraycopy`. This avoids intermediate allocations entirely and is significantly faster (~4x speedup observed).
+
+## 2024-05-25 - Zero-Allocation Packet Slicing
+**Learning:** Slicing large arrays into smaller blocks using `System.arraycopy` (like `Arrays.copyOfRange`) creates massive GC pressure when done in a tight loop. Passing `offset` and `length` to downstream methods instead of slicing allows for zero-allocation processing of large buffers.
+**Action:** Refactor methods processing data streams to accept `byte[] buffer, int offset, int length` instead of requiring a fresh `byte[]` slice.
