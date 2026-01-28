@@ -397,9 +397,9 @@ public class CommandInterfaceESP32 {
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
-        // Optimization: Pre-allocate the exact size needed (16 bytes header + data)
-        // and fill it directly to avoid multiple array allocations and copies.
-        byte[] pkt = new byte[16 + data.length];
+
+        // Optimized: Allocate single buffer and use arraycopy to avoid O(N) allocations/copies
+        byte pkt[] = new byte[16 + data.length];
         putInt(pkt, 0, data.length);
         putInt(pkt, 4, seq);
         putInt(pkt, 8, 0);
@@ -407,6 +407,13 @@ public class CommandInterfaceESP32 {
         System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
+    }
+
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset + 1] = (byte) ((i >> 8) & 0xff);
+        buf[offset + 2] = (byte) ((i >> 16) & 0xff);
+        buf[offset + 3] = (byte) ((i >> 24) & 0xff);
     }
 
     public void init() {
