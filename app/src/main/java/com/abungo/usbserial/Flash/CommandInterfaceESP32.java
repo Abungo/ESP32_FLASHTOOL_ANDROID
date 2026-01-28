@@ -401,24 +401,22 @@ public class CommandInterfaceESP32 {
         // Packet structure: [4 bytes size][4 bytes seq][4 bytes 0][4 bytes 0][data]
         byte[] pkt = new byte[16 + data.length];
 
-        // Size
-        pkt[0] = (byte) (data.length & 0xff);
-        pkt[1] = (byte) ((data.length >> 8) & 0xff);
-        pkt[2] = (byte) ((data.length >> 16) & 0xff);
-        pkt[3] = (byte) ((data.length >> 24) & 0xff);
-
-        // Sequence
-        pkt[4] = (byte) (seq & 0xff);
-        pkt[5] = (byte) ((seq >> 8) & 0xff);
-        pkt[6] = (byte) ((seq >> 16) & 0xff);
-        pkt[7] = (byte) ((seq >> 24) & 0xff);
-
-        // Bytes 8-15 are 0 by default in a new Java array.
-
-        // Data
+        // Optimized: Allocate single buffer and use arraycopy to avoid O(N) allocations/copies
+        byte pkt[] = new byte[16 + data.length];
+        putInt(pkt, 0, data.length);
+        putInt(pkt, 4, seq);
+        putInt(pkt, 8, 0);
+        putInt(pkt, 12, 0);
         System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
+    }
+
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset + 1] = (byte) ((i >> 8) & 0xff);
+        buf[offset + 2] = (byte) ((i >> 16) & 0xff);
+        buf[offset + 3] = (byte) ((i >> 24) & 0xff);
     }
 
     public void init() {
@@ -585,6 +583,13 @@ public class CommandInterfaceESP32 {
         byte c[] = new byte[length];
         System.arraycopy(arr1, pos, c, 0, length);
         return c;
+    }
+
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset+1] = (byte) ((i >> 8) & 0xff);
+        buf[offset+2] = (byte) ((i >> 16) & 0xff);
+        buf[offset+3] = (byte) ((i >> 24) & 0xff);
     }
 
     /*
