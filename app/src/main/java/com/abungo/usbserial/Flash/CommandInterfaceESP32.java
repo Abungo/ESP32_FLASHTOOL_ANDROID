@@ -335,6 +335,7 @@ public class CommandInterfaceESP32 {
     }*/
     /*
      * This will do a SLIP encode
+     * Optimized to use ByteArrayOutputStream to avoid O(N^2) complexity from repeated array copying.
      */
     public byte[] slipEncode(byte buffer[]) {
         ByteArrayOutputStream encoded = new ByteArrayOutputStream(buffer.length + 20);
@@ -397,8 +398,7 @@ public class CommandInterfaceESP32 {
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
-        // Optimization: Allocate packet buffer once and fill directly to avoid 4 allocations and copies per block.
-        // Packet structure: [4 bytes size][4 bytes seq][4 bytes 0][4 bytes 0][data]
+        // Optimized packet construction to avoid multiple array allocations and copies
         byte[] pkt = new byte[16 + data.length];
 
         // Optimized: Allocate single buffer and use arraycopy to avoid O(N) allocations/copies
@@ -568,6 +568,7 @@ public class CommandInterfaceESP32 {
 
     /*
      * This takes 2 arrays as params and return a concatenate array
+     * Optimized to use System.arraycopy for better performance.
      */
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
         byte c[] = new byte[arr1.length + arr2.length];
