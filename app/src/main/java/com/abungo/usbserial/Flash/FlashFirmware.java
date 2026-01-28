@@ -188,6 +188,16 @@ public class FlashFirmware extends AppCompatActivity {
     });
   }
 
+  private byte[] readFile(InputStream inputStream) throws IOException {
+    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        InputStream is = inputStream) {
+      byte[] buffer = new byte[1024];
+      int len;
+      while ((len = is.read(buffer)) != -1) {
+        byteArrayOutputStream.write(buffer, 0, len);
+      }
+      return byteArrayOutputStream.toByteArray();
+    }
   private void executeUploadESP32() {
     showProgressDialog("Flashing Firmware", "Flashing Your Firmware...");
 
@@ -276,14 +286,24 @@ public class FlashFirmware extends AppCompatActivity {
       cmd.changeBaudeRate();
       cmd.init();
 
-      dialogAppend("Flashing file 1 0x1000");
-      byte[] data = readFile(file1);
-      if (data.length > 0) {
-          cmd.flashData(data, 0x1000, 0);
-      } else {
-          tvAppend(tvRead, "Error: Firmware file is empty.\n");
-      }
+      // Those are the files you want to flush
+      try {
+        dialogAppend("Flashing file 1 0x1000");
+        cmd.flashData(readFile(file1), 0x1000, 0);
+        /*
+        dialogAppend("Flashing file 2 0x1000");
+        cmd.flashData(readFile(file2), 0x1000, 0);
 
+        dialogAppend("Flashing file 3 0x10000");
+        cmd.flashData(readFile(file3), 0x10000, 0);
+        dialogAppend("Flashing file 4 0x8000");
+        cmd.flashData(readFile(file4), 0x8000, 0);
+        */
+      } catch (IOException e) {
+        e.printStackTrace();
+        tvAppend(tvRead, "Error reading file: " + e.getMessage() + "\n");
+      }
+      // we have finish flashing lets reset the board so that the program can start
       cmd.reset();
 
       dialogAppend("Done");

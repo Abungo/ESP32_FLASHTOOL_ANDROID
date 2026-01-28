@@ -338,21 +338,23 @@ public class CommandInterfaceESP32 {
      * Optimized to use ByteArrayOutputStream to avoid O(N^2) complexity from repeated array copying.
      */
     public byte[] slipEncode(byte buffer[]) {
-        ByteArrayOutputStream encoded = new ByteArrayOutputStream(buffer.length + 16);
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream(buffer.length + 20);
         encoded.write(0xC0);
 
-        for (byte b : buffer) {
-            if (b == (byte) 0xC0) {
+        for (int x = 0; x < buffer.length; x++) {
+            if (buffer[x] == (byte) (0xC0)) {
                 encoded.write(0xDB);
                 encoded.write(0xDC);
-            } else if (b == (byte) 0xDB) {
+
+            } else if (buffer[x] == (byte) (0xDB)) {
                 encoded.write(0xDB);
                 encoded.write(0xDD);
             } else {
-                encoded.write(b);
+                encoded.write(buffer[x]);
             }
         }
         encoded.write(0xC0);
+
         return encoded.toByteArray();
     }
 
@@ -397,13 +399,22 @@ public class CommandInterfaceESP32 {
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
 
-        byte pkt[] = _appendArray(_int_to_bytearray(data.length),_int_to_bytearray(seq));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt,_int_to_bytearray(0));
-        pkt = _appendArray(pkt, data);
+        // Optimized: Allocate single buffer and use arraycopy to avoid O(N) allocations/copies
+        byte pkt[] = new byte[16 + data.length];
+        putInt(pkt, 0, data.length);
+        putInt(pkt, 4, seq);
+        putInt(pkt, 8, 0);
+        putInt(pkt, 12, 0);
+        System.arraycopy(data, 0, pkt, 16, data.length);
 
         sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
+    }
 
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset + 1] = (byte) ((i >> 8) & 0xff);
+        buf[offset + 2] = (byte) ((i >> 16) & 0xff);
+        buf[offset + 3] = (byte) ((i >> 24) & 0xff);
     }
 
     public void init() {
@@ -558,7 +569,6 @@ public class CommandInterfaceESP32 {
      * Optimized to use System.arraycopy for better performance.
      */
     private byte[] _appendArray(byte arr1[], byte arr2[]) {
-
         byte c[] = new byte[arr1.length + arr2.length];
         System.arraycopy(arr1, 0, c, 0, arr1.length);
         System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
@@ -569,13 +579,16 @@ public class CommandInterfaceESP32 {
      * get part of an array
      */
     private byte[] _subArray(byte arr1[], int pos, int length) {
-
         byte c[] = new byte[length];
-
-        for (int i = 0; i < (length); i++) {
-            c[i] = arr1[i + pos];
-        }
+        System.arraycopy(arr1, pos, c, 0, length);
         return c;
+    }
+
+    private void putInt(byte[] buf, int offset, int i) {
+        buf[offset] = (byte) (i & 0xff);
+        buf[offset+1] = (byte) ((i >> 8) & 0xff);
+        buf[offset+2] = (byte) ((i >> 16) & 0xff);
+        buf[offset+3] = (byte) ((i >> 24) & 0xff);
     }
 
     /*
