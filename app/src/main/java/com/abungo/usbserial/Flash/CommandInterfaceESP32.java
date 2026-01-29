@@ -149,7 +149,9 @@ public class CommandInterfaceESP32 {
     }
 
     public void changeBaudeRate() {
-        byte pkt[] = _appendArray(_int_to_bytearray(921600), _int_to_bytearray(0));
+        byte pkt[] = new byte[8];
+        putInt(pkt, 0, 921600);
+        putInt(pkt, 4, 0);
         sendCommand((byte) ESP_CHANGE_BAUDRATE, pkt, 0, 100);
 
         // second we change the comport baud rate
@@ -435,7 +437,9 @@ public class CommandInterfaceESP32 {
 
         if (!IS_STUB) {
             // System.out.println("No stub...");
-            byte pkt[] = _appendArray(_int_to_bytearray(0), _int_to_bytearray(0));
+            byte pkt[] = new byte[8];
+            putInt(pkt, 0, 0);
+            putInt(pkt, 4, 0);
             sendCommand((byte) ESP_SPI_ATTACH, pkt, 0, 100);
         }
 
@@ -443,11 +447,13 @@ public class CommandInterfaceESP32 {
         // System.out.println("Configuring flash size...");
         mUpCallback.onInfo("Configuring flash size..." + "\n");
 
-        byte pkt2[] = _appendArray(_int_to_bytearray(0), _int_to_bytearray(_flashsize));
-        pkt2 = _appendArray(pkt2, _int_to_bytearray(0x10000));
-        pkt2 = _appendArray(pkt2, _int_to_bytearray(4096));
-        pkt2 = _appendArray(pkt2, _int_to_bytearray(256));
-        pkt2 = _appendArray(pkt2, _int_to_bytearray(0xFFFF));
+        byte pkt2[] = new byte[24];
+        putInt(pkt2, 0, 0);
+        putInt(pkt2, 4, _flashsize);
+        putInt(pkt2, 8, 0x10000);
+        putInt(pkt2, 12, 4096);
+        putInt(pkt2, 16, 256);
+        putInt(pkt2, 20, 0xFFFF);
 
         sendCommand((byte) ESP_SPI_SET_PARAMS, pkt2, 0, 100);
 
@@ -528,9 +534,11 @@ public class CommandInterfaceESP32 {
 
         mUpCallback.onInfo("Compressed " + size + " bytes to " + compsize + "..." + "\n");
 
-        byte pkt[] = _appendArray(_int_to_bytearray(write_size), _int_to_bytearray(num_blocks));
-        pkt = _appendArray(pkt, _int_to_bytearray(FLASH_WRITE_SIZE));
-        pkt = _appendArray(pkt, _int_to_bytearray(offset));
+        byte pkt[] = new byte[16];
+        putInt(pkt, 0, write_size);
+        putInt(pkt, 4, num_blocks);
+        putInt(pkt, 8, FLASH_WRITE_SIZE);
+        putInt(pkt, 12, offset);
 
         // System.out.println("params:" +printHex(pkt));
         sendCommand((byte) ESP_FLASH_DEFL_BEGIN, pkt, 0, timeout);
