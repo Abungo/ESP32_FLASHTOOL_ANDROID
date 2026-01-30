@@ -149,7 +149,9 @@ public class CommandInterfaceESP32 {
     }
 
     public void changeBaudeRate() {
-        byte pkt[] = _appendArray(_int_to_bytearray(921600), _int_to_bytearray(0));
+        byte pkt[] = new byte[8];
+        putInt(pkt, 0, 921600);
+        putInt(pkt, 4, 0);
         sendCommand((byte) ESP_CHANGE_BAUDRATE, pkt, 0, 100);
 
         // second we change the comport baud rate
@@ -411,15 +413,19 @@ public class CommandInterfaceESP32 {
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
+        flash_defl_block(data, 0, data.length, seq, timeout);
+    }
+
+    public void flash_defl_block(byte data[], int offset, int length, int seq, int timeout) {
         // Optimized packet construction to avoid multiple array allocations and copies
-        byte[] pkt = new byte[16 + data.length];
-        putInt(pkt, 0, data.length);
+        byte[] pkt = new byte[16 + length];
+        putInt(pkt, 0, length);
         putInt(pkt, 4, seq);
         putInt(pkt, 8, 0);
         putInt(pkt, 12, 0);
-        System.arraycopy(data, 0, pkt, 16, data.length);
+        System.arraycopy(data, offset, pkt, 16, length);
 
-        sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
+        sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data, offset, length), timeout);
     }
 
     private void putInt(byte[] buf, int offset, int i) {
@@ -435,7 +441,9 @@ public class CommandInterfaceESP32 {
 
         if (!IS_STUB) {
             // System.out.println("No stub...");
-            byte pkt[] = _appendArray(_int_to_bytearray(0), _int_to_bytearray(0));
+            byte pkt[] = new byte[8];
+            putInt(pkt, 0, 0);
+            putInt(pkt, 4, 0);
             sendCommand((byte) ESP_SPI_ATTACH, pkt, 0, 100);
         }
 
@@ -443,11 +451,13 @@ public class CommandInterfaceESP32 {
         // System.out.println("Configuring flash size...");
         mUpCallback.onInfo("Configuring flash size..." + "\n");
 
-        byte pkt2[] = _appendArray(_int_to_bytearray(0), _int_to_bytearray(_flashsize));
-        pkt2 = _appendArray(pkt2, _int_to_bytearray(0x10000));
-        pkt2 = _appendArray(pkt2, _int_to_bytearray(4096));
-        pkt2 = _appendArray(pkt2, _int_to_bytearray(256));
-        pkt2 = _appendArray(pkt2, _int_to_bytearray(0xFFFF));
+        byte pkt2[] = new byte[24];
+        putInt(pkt2, 0, 0);
+        putInt(pkt2, 4, _flashsize);
+        putInt(pkt2, 8, 0x10000);
+        putInt(pkt2, 12, 4096);
+        putInt(pkt2, 16, 256);
+        putInt(pkt2, 20, 0xFFFF);
 
         sendCommand((byte) ESP_SPI_SET_PARAMS, pkt2, 0, 100);
 
@@ -480,28 +490,11 @@ public class CommandInterfaceESP32 {
             mUpCallback.onInfo("percentage: " + percentage + "\n");
             mUpCallback.onUploading((int) percentage);
 
-            byte block[];
+            int length = Math.min(FLASH_WRITE_SIZE, image.length - position);
+            flash_defl_block(image, position, length, seq, 100);
 
-            if (image.length - position >= FLASH_WRITE_SIZE) {
-                block = _subArray(image, position, FLASH_WRITE_SIZE);
-            } else {
-                // Pad the last block
-                block = _subArray(image, position, image.length - position);
-
-                // we have an incomplete block (ie: less than 1024) so let pad the missing block
-                // with 0xFF
-                /*
-                 * byte tempArray[] = new byte[FLASH_WRITE_SIZE - block.length];
-                 * for (int i = 0; i < tempArray.length; i++) {
-                 * tempArray[i] = (byte) 0xFF;
-                 * }
-                 * block = _appendArray(block, tempArray);
-                 */
-            }
-
-            flash_defl_block(block, seq, 100);
             seq += 1;
-            written += block.length;
+            written += length;
             position += FLASH_WRITE_SIZE;
         }
 
@@ -528,9 +521,11 @@ public class CommandInterfaceESP32 {
 
         mUpCallback.onInfo("Compressed " + size + " bytes to " + compsize + "..." + "\n");
 
-        byte pkt[] = _appendArray(_int_to_bytearray(write_size), _int_to_bytearray(num_blocks));
-        pkt = _appendArray(pkt, _int_to_bytearray(FLASH_WRITE_SIZE));
-        pkt = _appendArray(pkt, _int_to_bytearray(offset));
+        byte pkt[] = new byte[16];
+        putInt(pkt, 0, write_size);
+        putInt(pkt, 4, num_blocks);
+        putInt(pkt, 8, FLASH_WRITE_SIZE);
+        putInt(pkt, 12, offset);
 
         // System.out.println("params:" +printHex(pkt));
         sendCommand((byte) ESP_FLASH_DEFL_BEGIN, pkt, 0, timeout);
@@ -577,41 +572,26 @@ public class CommandInterfaceESP32 {
         return sb.toString();
     }
 
-    /*
-     * This takes 2 arrays as params and return a concatenate array
-     * Optimized to use System.arraycopy for better performance.
-     */
-    private byte[] _appendArray(byte arr1[], byte arr2[]) {
-        byte c[] = new byte[arr1.length + arr2.length];
-        System.arraycopy(arr1, 0, c, 0, arr1.length);
-        System.arraycopy(arr2, 0, c, arr1.length, arr2.length);
-        return c;
-    }
-
-    /*
-     * get part of an array
-     */
-    private byte[] _subArray(byte arr1[], int pos, int length) {
-        byte c[] = new byte[length];
-        System.arraycopy(arr1, pos, c, 0, length);
-        return c;
-    }
 
     /*
      * Calculate the checksum.
      */
     public int _checksum(byte[] data) {
+        return _checksum(data, 0, data.length);
+    }
+
+    public int _checksum(byte[] data, int offset, int length) {
         int chk = ESP_CHECKSUM_MAGIC;
-        int x = 0;
-        for (x = 0; x < data.length; x++) {
-            chk ^= data[x];
+        for (int x = 0; x < length; x++) {
+            chk ^= data[offset + x];
         }
         return chk;
     }
 
     public int read_reg(int addr, int timeout) {
         cmdRet val;
-        byte pkt[] = _int_to_bytearray(addr);
+        byte pkt[] = new byte[4];
+        putInt(pkt, 0, addr);
         val = sendCommand((byte) ESP_READ_REG, pkt, 0, timeout);
         return val.retValue[0];
     }
@@ -630,7 +610,8 @@ public class CommandInterfaceESP32 {
 
         try {
 
-            byte packet[] = _int_to_bytearray(reg);
+            byte packet[] = new byte[4];
+            putInt(packet, 0, reg);
 
             ret = sendCommand((byte) ESP_READ_REG, packet, 0, 0);
             Struct myRet = new Struct();
@@ -662,16 +643,6 @@ public class CommandInterfaceESP32 {
         } else {
             return result;
         }
-    }
-
-    private byte[] _int_to_bytearray(int i) {
-        byte ret[] = { (byte) (i & 0xff), (byte) ((i >> 8) & 0xff), (byte) ((i >> 16) & 0xff),
-                (byte) ((i >> 24) & 0xff) };
-        return ret;
-    }
-
-    private int _bytearray_to_int(byte i, byte j, byte k, byte l) {
-        return ((int) i | (int) (j << 8) | (int) (k << 16) | (int) (l << 24));
     }
 
     /**
