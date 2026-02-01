@@ -233,9 +233,7 @@ public class CommandInterfaceESP32 {
         data[6] = (byte) ((chk >> 16) & 0xFF);
         data[7] = (byte) ((chk >> 24) & 0xFF);
 
-        for (i = 0; i < buffer.length; i++) {
-            data[8 + i] = buffer[i];
-        }
+        System.arraycopy(buffer, 0, data, 8, buffer.length);
 
         // System.out.println("opcode:"+opcode);
         int ret = 0;
@@ -411,15 +409,19 @@ public class CommandInterfaceESP32 {
      */
 
     public void flash_defl_block(byte data[], int seq, int timeout) {
+        flash_defl_block(data, 0, data.length, seq, timeout);
+    }
+
+    public void flash_defl_block(byte data[], int offset, int length, int seq, int timeout) {
         // Optimized packet construction to avoid multiple array allocations and copies
-        byte[] pkt = new byte[16 + data.length];
-        putInt(pkt, 0, data.length);
+        byte[] pkt = new byte[16 + length];
+        putInt(pkt, 0, length);
         putInt(pkt, 4, seq);
         putInt(pkt, 8, 0);
         putInt(pkt, 12, 0);
-        System.arraycopy(data, 0, pkt, 16, data.length);
+        System.arraycopy(data, offset, pkt, 16, length);
 
-        sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data), timeout);
+        sendCommand((byte) ESP_FLASH_DEFL_DATA, pkt, _checksum(data, offset, length), timeout);
     }
 
     private void putInt(byte[] buf, int offset, int i) {
@@ -480,28 +482,16 @@ public class CommandInterfaceESP32 {
             mUpCallback.onInfo("percentage: " + percentage + "\n");
             mUpCallback.onUploading((int) percentage);
 
-            byte block[];
-
+            int length;
             if (image.length - position >= FLASH_WRITE_SIZE) {
-                block = _subArray(image, position, FLASH_WRITE_SIZE);
+                length = FLASH_WRITE_SIZE;
             } else {
-                // Pad the last block
-                block = _subArray(image, position, image.length - position);
-
-                // we have an incomplete block (ie: less than 1024) so let pad the missing block
-                // with 0xFF
-                /*
-                 * byte tempArray[] = new byte[FLASH_WRITE_SIZE - block.length];
-                 * for (int i = 0; i < tempArray.length; i++) {
-                 * tempArray[i] = (byte) 0xFF;
-                 * }
-                 * block = _appendArray(block, tempArray);
-                 */
+                length = image.length - position;
             }
 
-            flash_defl_block(block, seq, 100);
+            flash_defl_block(image, position, length, seq, 100);
             seq += 1;
-            written += block.length;
+            written += length;
             position += FLASH_WRITE_SIZE;
         }
 
@@ -601,10 +591,13 @@ public class CommandInterfaceESP32 {
      * Calculate the checksum.
      */
     public int _checksum(byte[] data) {
+        return _checksum(data, 0, data.length);
+    }
+
+    public int _checksum(byte[] data, int offset, int length) {
         int chk = ESP_CHECKSUM_MAGIC;
-        int x = 0;
-        for (x = 0; x < data.length; x++) {
-            chk ^= data[x];
+        for (int x = 0; x < length; x++) {
+            chk ^= data[offset + x];
         }
         return chk;
     }
